@@ -1,0 +1,2112 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1a1208">
+<meta name="description" content="Dizionario digitale del Grecanico calabrese">
+<title>Γκρεκάνικο · Dizionario Grecanico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1208;
+  --ink2: #3d2e10;
+  --ink3: #7a6040;
+  --gold: #c8922a;
+  --gold2: #e8b84b;
+  --gold3: #f5d98a;
+  --cream: #faf6ed;
+  --cream2: #f0e8d5;
+  --cream3: #e4d5b7;
+  --terracotta: #c4512a;
+  --olive: #6b7c3a;
+  --blue-med: #2d5a8e;
+  --surface: #ffffff;
+  --surface2: #faf6ed;
+  --border: rgba(26,18,8,0.12);
+  --border2: rgba(26,18,8,0.25);
+  --shadow: 0 2px 16px rgba(26,18,8,0.08);
+  --shadow-lg: 0 8px 40px rgba(26,18,8,0.14);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Outfit', sans-serif;
+  --transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ─── LAYOUT ─── */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ─── TOP BAR ─── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--ink);
+  color: var(--cream);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 20px; height: 60px;
+  border-bottom: 2px solid var(--gold);
+}
+.topbar-logo {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 600;
+  color: var(--gold2); letter-spacing: 0.02em;
+  cursor: pointer; white-space: nowrap;
+}
+.topbar-logo span { font-weight: 300; color: var(--cream3); font-size: 14px; margin-left: 8px; }
+.topbar-search {
+  flex: 1; max-width: 480px;
+  position: relative;
+}
+.topbar-search input {
+  width: 100%; padding: 8px 16px 8px 40px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 24px; color: var(--cream);
+  font-family: var(--font-body); font-size: 14px;
+  outline: none; transition: var(--transition);
+}
+.topbar-search input::placeholder { color: rgba(255,255,255,0.4); }
+.topbar-search input:focus { background: rgba(255,255,255,0.15); border-color: var(--gold); }
+.topbar-search-icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; opacity: 0.5;
+}
+.topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.btn-icon {
+  background: none; border: none; cursor: pointer;
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--cream2); transition: var(--transition);
+  font-size: 16px;
+}
+.btn-icon:hover { background: rgba(255,255,255,0.1); color: var(--gold2); }
+.user-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--gold); color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 13px; cursor: pointer;
+  border: 2px solid var(--gold2); transition: var(--transition);
+}
+.user-avatar:hover { transform: scale(1.05); }
+
+/* ─── NAV TABS ─── */
+.nav-tabs {
+  background: var(--ink2);
+  display: flex; overflow-x: auto; scrollbar-width: none;
+  border-bottom: 1px solid rgba(200,146,42,0.3);
+}
+.nav-tabs::-webkit-scrollbar { display: none; }
+.nav-tab {
+  padding: 10px 20px; font-size: 13px; font-weight: 500;
+  color: rgba(240,232,213,0.6); cursor: pointer;
+  border: none; background: none; white-space: nowrap;
+  position: relative; transition: var(--transition);
+  font-family: var(--font-body); letter-spacing: 0.04em;
+}
+.nav-tab:hover { color: var(--gold2); }
+.nav-tab.active { color: var(--gold2); }
+.nav-tab.active::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px; background: var(--gold2);
+}
+
+/* ─── MAIN CONTENT ─── */
+.main { flex: 1; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ─── HERO / HOME ─── */
+.hero {
+  background: linear-gradient(135deg, var(--ink) 0%, var(--ink2) 60%, #3d2e10 100%);
+  padding: 60px 24px 80px;
+  text-align: center; position: relative; overflow: hidden;
+}
+.hero::before {
+  content: 'Γ'; position: absolute; right: -20px; top: -40px;
+  font-family: var(--font-display); font-size: 300px;
+  color: rgba(200,146,42,0.05); line-height: 1; pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: var(--font-body); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.25em; color: var(--gold);
+  text-transform: uppercase; margin-bottom: 16px;
+}
+.hero-title {
+  font-family: var(--font-display); font-size: clamp(36px, 6vw, 64px);
+  font-weight: 300; color: var(--cream); line-height: 1.1; margin-bottom: 8px;
+}
+.hero-title strong { font-weight: 600; color: var(--gold2); }
+.hero-subtitle {
+  font-size: 15px; color: var(--cream3); max-width: 520px;
+  margin: 0 auto 36px; font-weight: 300;
+}
+.hero-search {
+  max-width: 560px; margin: 0 auto; position: relative;
+}
+.hero-search input {
+  width: 100%; padding: 16px 60px 16px 24px;
+  border-radius: 50px; border: 2px solid var(--gold);
+  background: rgba(255,255,255,0.08);
+  color: var(--cream); font-size: 16px; font-family: var(--font-body);
+  outline: none; backdrop-filter: blur(8px);
+  transition: var(--transition);
+}
+.hero-search input::placeholder { color: rgba(240,232,213,0.4); }
+.hero-search input:focus { background: rgba(255,255,255,0.12); box-shadow: 0 0 0 4px rgba(200,146,42,0.2); }
+.hero-search-btn {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  background: var(--gold); color: var(--ink); border: none;
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; transition: var(--transition);
+}
+.hero-search-btn:hover { background: var(--gold2); transform: translateY(-50%) scale(1.05); }
+.hero-stats {
+  display: flex; justify-content: center; gap: 40px;
+  margin-top: 40px; flex-wrap: wrap;
+}
+.hero-stat { text-align: center; }
+.hero-stat-n {
+  font-family: var(--font-display); font-size: 32px;
+  font-weight: 600; color: var(--gold2); line-height: 1;
+}
+.hero-stat-l { font-size: 12px; color: var(--cream3); margin-top: 4px; letter-spacing: 0.08em; }
+
+/* ─── SECTION WRAPPER ─── */
+.section { padding: 32px 24px; max-width: 1200px; margin: 0 auto; }
+.section-title {
+  font-family: var(--font-display); font-size: 26px; font-weight: 600;
+  color: var(--ink2); margin-bottom: 4px;
+}
+.section-sub { font-size: 13px; color: var(--ink3); margin-bottom: 24px; }
+
+/* ─── ALPHABET NAV ─── */
+.alpha-nav {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 28px;
+}
+.alpha-btn {
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border2); background: var(--surface);
+  font-family: var(--font-display); font-size: 15px; font-weight: 600;
+  color: var(--ink2); cursor: pointer; transition: var(--transition);
+  display: flex; align-items: center; justify-content: center;
+}
+.alpha-btn:hover, .alpha-btn.active {
+  background: var(--ink); color: var(--gold2); border-color: var(--ink);
+}
+
+/* ─── LEMMA GRID ─── */
+.lemma-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.lemma-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px 22px;
+  cursor: pointer; transition: var(--transition);
+  position: relative; overflow: hidden;
+}
+.lemma-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--gold); border-radius: 3px 0 0 3px;
+  opacity: 0; transition: var(--transition);
+}
+.lemma-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.lemma-card:hover::before { opacity: 1; }
+.lemma-word {
+  font-family: var(--font-display); font-size: 22px; font-weight: 600;
+  color: var(--ink); line-height: 1.2;
+}
+.lemma-phonetic { font-size: 12px; color: var(--ink3); font-style: italic; margin-top: 2px; }
+.lemma-cat {
+  display: inline-block; margin-top: 8px;
+  padding: 2px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+  background: var(--cream2); color: var(--ink3); border: 1px solid var(--cream3);
+}
+.lemma-cat.verb { background: #e8f0da; color: #4a5e20; border-color: #c8d88a; }
+.lemma-cat.noun { background: #dde8f5; color: #2a4a70; border-color: #a8c5e8; }
+.lemma-cat.adj  { background: #f5e8da; color: #7a4020; border-color: #e8c5a0; }
+.lemma-it { font-size: 13px; color: var(--ink2); margin-top: 10px; line-height: 1.5; }
+.lemma-it strong { color: var(--terracotta); font-weight: 500; }
+.lemma-media { display: flex; gap: 6px; margin-top: 12px; }
+.media-badge {
+  padding: 3px 8px; border-radius: 20px; font-size: 11px;
+  font-weight: 500; display: flex; align-items: center; gap: 4px;
+  background: var(--cream2); color: var(--ink3); border: 1px solid var(--cream3);
+}
+.media-badge.audio { background: #f0e8f8; color: #6030a0; border-color: #d0b8f0; }
+.media-badge.video { background: #f8e8e0; color: #a03020; border-color: #f0b8a0; }
+.media-badge.photo { background: #e8f8e8; color: #207030; border-color: #a8e0a8; }
+
+/* ─── LEMMA DETAIL MODAL ─── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(26,18,8,0.7); backdrop-filter: blur(4px);
+  display: flex; align-items: flex-end;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+@media(min-width:640px) {
+  .modal-overlay { align-items: center; justify-content: center; padding: 24px; }
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  width: 100%; max-height: 90vh; overflow-y: auto;
+  transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  padding: 28px 24px 40px;
+}
+@media(min-width:640px) {
+  .modal { border-radius: var(--radius-lg); max-width: 640px; transform: translateY(20px) scale(0.96); }
+}
+.modal-overlay.open .modal { transform: none; }
+.modal-handle {
+  width: 40px; height: 4px; background: var(--cream3);
+  border-radius: 4px; margin: 0 auto 20px;
+}
+@media(min-width:640px) { .modal-handle { display: none; } }
+.modal-close {
+  position: absolute; top: 16px; right: 16px;
+  background: var(--cream2); border: none; border-radius: 50%;
+  width: 32px; height: 32px; cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center; color: var(--ink3);
+  transition: var(--transition);
+}
+.modal-close:hover { background: var(--cream3); color: var(--ink); }
+.modal-word {
+  font-family: var(--font-display); font-size: 38px; font-weight: 600; color: var(--ink);
+}
+.modal-phonetic { font-size: 14px; color: var(--ink3); font-style: italic; margin-top: 4px; }
+.modal-section-title {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--gold); margin: 20px 0 8px;
+  border-bottom: 1px solid var(--cream3); padding-bottom: 6px;
+}
+.modal-definition { font-size: 16px; color: var(--ink); line-height: 1.7; }
+.modal-it { font-size: 14px; color: var(--ink3); line-height: 1.7; margin-top: 6px; }
+.modal-example {
+  background: var(--cream2); border-left: 3px solid var(--gold);
+  padding: 10px 14px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-top: 8px;
+}
+.modal-example-gr { font-family: var(--font-display); font-size: 16px; font-style: italic; color: var(--ink2); }
+.modal-example-it { font-size: 13px; color: var(--ink3); margin-top: 4px; }
+.modal-audio-btn {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--ink); color: var(--gold2); border: none;
+  padding: 10px 20px; border-radius: 24px; cursor: pointer;
+  font-family: var(--font-body); font-size: 14px; font-weight: 500;
+  transition: var(--transition); margin-top: 8px;
+}
+.modal-audio-btn:hover { background: var(--ink2); }
+.modal-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.modal-tag {
+  padding: 4px 12px; border-radius: 20px; font-size: 12px;
+  background: var(--cream2); color: var(--ink3); border: 1px solid var(--cream3);
+}
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--ink); color: var(--gold2); border: none;
+  padding: 10px 20px; border-radius: 24px; cursor: pointer;
+  font-family: var(--font-body); font-size: 14px; font-weight: 500;
+  transition: var(--transition); display: flex; align-items: center; gap: 8px;
+}
+.btn-primary:hover { background: var(--gold); color: var(--ink); }
+.btn-secondary {
+  background: var(--cream2); color: var(--ink2); border: 1px solid var(--border2);
+  padding: 10px 20px; border-radius: 24px; cursor: pointer;
+  font-family: var(--font-body); font-size: 14px; font-weight: 500;
+  transition: var(--transition); display: flex; align-items: center; gap: 8px;
+}
+.btn-secondary:hover { background: var(--cream3); }
+
+/* ─── SEARCH RESULTS ─── */
+.search-header {
+  background: var(--cream2); border-bottom: 1px solid var(--border);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.search-query { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--ink); }
+.search-count { font-size: 13px; color: var(--ink3); }
+.filter-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.filter-chip {
+  padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--border2); background: var(--surface); color: var(--ink2);
+  cursor: pointer; transition: var(--transition);
+}
+.filter-chip.active { background: var(--ink); color: var(--gold2); border-color: var(--ink); }
+.filter-chip:hover:not(.active) { background: var(--cream2); }
+
+/* ─── USER AREA ─── */
+.user-header {
+  background: linear-gradient(135deg, #2d5a8e 0%, #1a3a5c 100%);
+  padding: 36px 24px; color: white;
+}
+.user-greeting { font-family: var(--font-display); font-size: 28px; font-weight: 300; }
+.user-greeting strong { font-weight: 600; }
+.user-meta { font-size: 13px; opacity: 0.7; margin-top: 6px; }
+.user-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px;
+  margin-top: 20px;
+}
+.user-card {
+  background: rgba(255,255,255,0.12); border-radius: var(--radius);
+  padding: 16px; text-align: center; cursor: pointer;
+  transition: var(--transition); border: 1px solid rgba(255,255,255,0.15);
+}
+.user-card:hover { background: rgba(255,255,255,0.2); }
+.user-card-n { font-size: 28px; font-weight: 600; font-family: var(--font-display); }
+.user-card-l { font-size: 12px; opacity: 0.75; margin-top: 4px; }
+.saved-list { padding: 0; }
+.saved-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: var(--transition);
+}
+.saved-item:hover { padding-left: 8px; }
+.saved-item:last-child { border-bottom: none; }
+.saved-word { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--ink); }
+.saved-it { font-size: 13px; color: var(--ink3); }
+.saved-date { font-size: 11px; color: var(--ink3); margin-left: auto; white-space: nowrap; }
+.saved-remove {
+  background: none; border: none; cursor: pointer;
+  color: var(--cream3); font-size: 14px; padding: 4px; transition: var(--transition);
+}
+.saved-remove:hover { color: var(--terracotta); }
+
+/* ─── PROPOSTA FORM ─── */
+.form-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 24px;
+}
+.form-group { margin-bottom: 18px; }
+.form-label {
+  display: block; font-size: 12px; font-weight: 600;
+  letter-spacing: 0.08em; color: var(--ink3); margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.form-label span { color: var(--terracotta); }
+.form-input, .form-textarea, .form-select {
+  width: 100%; padding: 10px 14px;
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 14px; color: var(--ink);
+  background: var(--surface); outline: none; transition: var(--transition);
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,146,42,0.15);
+}
+.form-textarea { resize: vertical; min-height: 100px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(max-width:480px) { .form-row { grid-template-columns: 1fr; } }
+.upload-zone {
+  border: 2px dashed var(--cream3); border-radius: var(--radius);
+  padding: 24px; text-align: center; cursor: pointer;
+  transition: var(--transition); color: var(--ink3);
+}
+.upload-zone:hover { border-color: var(--gold); background: rgba(200,146,42,0.04); }
+.upload-icon { font-size: 28px; margin-bottom: 8px; }
+.upload-text { font-size: 13px; }
+
+/* ─── ADMIN AREA ─── */
+.admin-header {
+  background: linear-gradient(135deg, #2a1808 0%, #3d2010 100%);
+  padding: 28px 24px;
+}
+.admin-title { font-family: var(--font-display); font-size: 26px; color: var(--gold2); font-weight: 600; }
+.admin-sub { font-size: 13px; color: rgba(200,160,100,0.7); margin-top: 4px; }
+.admin-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; gap: 0; }
+.admin-tab {
+  padding: 10px 20px; font-size: 13px; font-weight: 500;
+  color: var(--ink3); border-bottom: 2px solid transparent;
+  cursor: pointer; transition: var(--transition); background: none; border: none;
+  border-bottom: 2px solid transparent; font-family: var(--font-body);
+}
+.admin-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.admin-tab:hover:not(.active) { color: var(--ink); }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  text-align: left; padding: 10px 14px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink3);
+  border-bottom: 2px solid var(--cream3); background: var(--cream2);
+}
+.data-table td {
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+  font-size: 14px; color: var(--ink); vertical-align: middle;
+}
+.data-table tr:hover td { background: var(--cream2); }
+.data-table .word-cell { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+.status-badge {
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+}
+.status-badge.published { background: #e0f5e8; color: #1a6b35; }
+.status-badge.draft { background: #f5f0e0; color: #7a6020; }
+.status-badge.review { background: #e8e0f5; color: #50308a; }
+.status-badge.pending { background: #f5e0e0; color: #8a2020; }
+.action-btns { display: flex; gap: 6px; }
+.btn-sm {
+  padding: 5px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500;
+  cursor: pointer; border: 1px solid var(--border2); background: var(--surface);
+  color: var(--ink); font-family: var(--font-body); transition: var(--transition);
+}
+.btn-sm:hover { background: var(--cream2); }
+.btn-sm.danger:hover { background: #f5e0e0; color: #8a2020; border-color: #d0a0a0; }
+.btn-sm.success:hover { background: #e0f5e8; color: #1a6b35; border-color: #a0d0a8; }
+.stat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px;
+}
+.stat-n {
+  font-family: var(--font-display); font-size: 34px;
+  font-weight: 600; color: var(--ink); line-height: 1;
+}
+.stat-label { font-size: 12px; color: var(--ink3); margin-top: 6px; font-weight: 500; }
+.stat-change { font-size: 11px; margin-top: 4px; }
+.stat-change.up { color: var(--olive); }
+.stat-change.down { color: var(--terracotta); }
+
+/* ─── TOAST ─── */
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 500; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--ink); color: var(--cream); padding: 12px 18px;
+  border-radius: var(--radius); font-size: 14px; font-weight: 500;
+  box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px;
+  transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  min-width: 240px;
+}
+.toast.show { transform: none; }
+.toast.success { border-left: 3px solid var(--olive); }
+.toast.error { border-left: 3px solid var(--terracotta); }
+.toast.info { border-left: 3px solid var(--blue-med); }
+
+/* ─── LOGIN PAGE ─── */
+.login-page {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: var(--ink); padding: 24px;
+}
+.login-box {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: 36px 32px; max-width: 400px; width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+.login-logo {
+  font-family: var(--font-display); font-size: 28px; font-weight: 600;
+  color: var(--ink); margin-bottom: 4px;
+}
+.login-logo span { color: var(--gold); }
+.login-sub { font-size: 13px; color: var(--ink3); margin-bottom: 28px; }
+.login-tabs { display: flex; margin-bottom: 24px; border-bottom: 2px solid var(--cream3); }
+.login-tab {
+  flex: 1; padding: 10px; text-align: center; cursor: pointer;
+  font-size: 14px; font-weight: 500; color: var(--ink3);
+  border-bottom: 2px solid transparent; margin-bottom: -2px; transition: var(--transition);
+}
+.login-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.demo-btns { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.demo-btn {
+  flex: 1; padding: 8px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border2); background: var(--cream2); color: var(--ink2);
+  font-size: 12px; cursor: pointer; font-family: var(--font-body); font-weight: 500;
+  transition: var(--transition);
+}
+.demo-btn:hover { background: var(--cream3); }
+
+/* ─── RESPONSIVE ─── */
+@media(max-width: 768px) {
+  .hero { padding: 40px 20px 60px; }
+  .section { padding: 24px 16px; }
+  .topbar-search { display: none; }
+  .lemma-grid { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-tab { padding: 8px 12px; font-size: 12px; }
+}
+
+/* ─── EMPTY STATE ─── */
+.empty-state {
+  text-align: center; padding: 60px 24px; color: var(--ink3);
+}
+.empty-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-title { font-family: var(--font-display); font-size: 22px; color: var(--ink2); margin-bottom: 8px; }
+.empty-text { font-size: 14px; max-width: 320px; margin: 0 auto; }
+
+/* ─── BACK BTN ─── */
+.back-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: none; border: none; cursor: pointer;
+  color: var(--ink3); font-size: 14px; font-family: var(--font-body);
+  padding: 8px 0; transition: var(--transition);
+}
+.back-btn:hover { color: var(--ink); }
+
+/* ─── SCROLL ─── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--cream2); }
+::-webkit-scrollbar-thumb { background: var(--cream3); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink3); }
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+.fade-in { animation: fadeIn 0.4s ease forwards; }
+.fade-in-d1 { animation-delay: 0.05s; opacity: 0; }
+.fade-in-d2 { animation-delay: 0.1s; opacity: 0; }
+.fade-in-d3 { animation-delay: 0.15s; opacity: 0; }
+
+/* ─── CHIPS & TAGS ─── */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  background: var(--cream2); color: var(--ink3); border: 1px solid var(--cream3);
+}
+.notification-dot {
+  width: 8px; height: 8px; background: var(--terracotta); border-radius: 50%;
+  position: absolute; top: 6px; right: 6px;
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ LOGIN PAGE ════════════════════ -->
+<div id="login-page" class="login-page">
+  <div class="login-box">
+    <div class="login-logo">Γκρεκάνικο <span>·</span></div>
+    <div class="login-sub">Dizionario digitale del Grecanico calabrese</div>
+    <div class="login-tabs">
+      <div class="login-tab active" onclick="switchLoginTab('login')">Accedi</div>
+      <div class="login-tab" onclick="switchLoginTab('register')">Registrati</div>
+    </div>
+    <!-- Login form -->
+    <div id="login-form">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" placeholder="mario@esempio.it" id="login-email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" placeholder="••••••••" id="login-pw">
+      </div>
+      <button class="btn-primary" style="width:100%;justify-content:center;padding:13px 20px;border-radius:var(--radius);font-size:15px" onclick="doLogin()">Accedi →</button>
+      <div class="demo-btns">
+        <button class="demo-btn" onclick="loginAs('user')">👤 Demo Utente</button>
+        <button class="demo-btn" onclick="loginAs('admin')">🛡 Demo Admin</button>
+        <button class="demo-btn" onclick="loginAs('guest')">👁 Ospite</button>
+      </div>
+    </div>
+    <!-- Register form -->
+    <div id="register-form" style="display:none">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nome</label>
+          <input class="form-input" type="text" placeholder="Mario">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cognome</label>
+          <input class="form-input" type="text" placeholder="Rossi">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" placeholder="mario@esempio.it">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" placeholder="Min. 8 caratteri">
+      </div>
+      <button class="btn-primary" style="width:100%;justify-content:center;padding:13px 20px;border-radius:var(--radius);font-size:15px" onclick="doRegister()">Crea account →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ APP ════════════════════ -->
+<div class="app" id="app" style="display:none">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-logo" onclick="goPage('home')">Γκρεκάνικο <span>Grecanico</span></div>
+    <div class="topbar-search">
+      <svg class="topbar-search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/>
+      </svg>
+      <input type="text" placeholder="Cerca un termine..." id="topbar-search-input" onkeydown="if(event.key==='Enter')doTopSearch()">
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" onclick="doTopSearch()" title="Cerca">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
+      </button>
+      <div style="position:relative">
+        <button class="btn-icon" onclick="goPage('user')" title="Area utente" id="user-btn" style="display:none">
+          <div class="user-avatar" id="topbar-avatar">MR</div>
+        </button>
+      </div>
+      <button class="btn-icon" onclick="goPage('admin')" title="Admin" id="admin-btn" style="display:none">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 1l1.5 3.5L13 5l-2.5 2.5.5 3.5L8 9.5 5 11l.5-3.5L3 5l3.5-.5z"/>
+        </svg>
+      </button>
+      <button class="btn-icon" onclick="doLogout()" title="Esci">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10 12l4-4-4-4M14 8H6M8 4H3a1 1 0 00-1 1v6a1 1 0 001 1h5"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- NAV TABS -->
+  <nav class="nav-tabs" id="main-nav">
+    <button class="nav-tab active" data-page="home" onclick="goPage('home')">🏛 Dizionario</button>
+    <button class="nav-tab" data-page="search" onclick="goPage('search')">🔍 Ricerca</button>
+    <button class="nav-tab" data-page="user" onclick="goPage('user')" id="nav-user" style="display:none">👤 Area Personale</button>
+    <button class="nav-tab" data-page="admin" onclick="goPage('admin')" id="nav-admin" style="display:none">🛡 Admin</button>
+  </nav>
+
+  <!-- ── PAGE: HOME ── -->
+  <div class="page active" id="page-home">
+    <div class="hero">
+      <div class="hero-eyebrow">Patrimonio Linguistico della Calabria</div>
+      <h1 class="hero-title"><strong>Γκρεκάνικο</strong><br>Dizionario Grecanico</h1>
+      <p class="hero-subtitle">Il dizionario digitale della lingua grecanica calabrese, con definizioni, esempi, audio e documenti multimediali.</p>
+      <div class="hero-search">
+        <input type="text" placeholder="Cerca in Grecanico o Italiano..." id="hero-search-input" onkeydown="if(event.key==='Enter')doHeroSearch()">
+        <button class="hero-search-btn" onclick="doHeroSearch()">→</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="hero-stat-n">1.240</div><div class="hero-stat-l">Lemmi</div></div>
+        <div class="hero-stat"><div class="hero-stat-n">380</div><div class="hero-stat-l">Audio</div></div>
+        <div class="hero-stat"><div class="hero-stat-n">92</div><div class="hero-stat-l">Video</div></div>
+        <div class="hero-stat"><div class="hero-stat-n">18</div><div class="hero-stat-l">Comuni</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="section-title">Sfoglia l'alfabeto</div>
+          <div class="section-sub">Seleziona una lettera per navigare i termini</div>
+        </div>
+        <div class="filter-chips">
+          <div class="filter-chip active" onclick="filterCat('all',this)">Tutti</div>
+          <div class="filter-chip" onclick="filterCat('verb',this)">Verbi</div>
+          <div class="filter-chip" onclick="filterCat('noun',this)">Sostantivi</div>
+          <div class="filter-chip" onclick="filterCat('adj',this)">Aggettivi</div>
+          <div class="filter-chip" onclick="filterCat('media',this)">Con media</div>
+        </div>
+      </div>
+      <div class="alpha-nav" id="alpha-nav"></div>
+      <div class="lemma-grid" id="lemma-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: SEARCH ── -->
+  <div class="page" id="page-search">
+    <div class="search-header">
+      <div>
+        <div class="search-query" id="search-query-label">Ricerca avanzata</div>
+        <div class="search-count" id="search-count-label">Inserisci un termine per cercare</div>
+      </div>
+      <div style="margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+        <input class="form-input" style="width:220px" type="text" placeholder="Termine..." id="adv-search-input" onkeydown="if(event.key==='Enter')doAdvSearch()">
+        <select class="form-select" style="width:140px" id="adv-cat-filter">
+          <option value="">Tutte le categorie</option>
+          <option value="noun">Sostantivi</option>
+          <option value="verb">Verbi</option>
+          <option value="adj">Aggettivi</option>
+        </select>
+        <button class="btn-primary" onclick="doAdvSearch()">Cerca</button>
+      </div>
+    </div>
+    <div class="section">
+      <div class="lemma-grid" id="search-results-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: USER ── -->
+  <div class="page" id="page-user">
+    <div class="user-header">
+      <div class="user-greeting">Benvenuto, <strong id="user-name-display">Mario</strong></div>
+      <div class="user-meta" id="user-role-display">Utente registrato · dal Gennaio 2024</div>
+      <div class="user-cards">
+        <div class="user-card" onclick="switchUserTab('saved')">
+          <div class="user-card-n" id="saved-count-badge">12</div>
+          <div class="user-card-l">Parole salvate</div>
+        </div>
+        <div class="user-card" onclick="switchUserTab('proposals')">
+          <div class="user-card-n">3</div>
+          <div class="user-card-l">Proposte inviate</div>
+        </div>
+        <div class="user-card" onclick="switchUserTab('history')">
+          <div class="user-card-n">47</div>
+          <div class="user-card-l">Ricerche effettuate</div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchUserTab('saved')">📚 Parole Salvate</button>
+        <button class="admin-tab" onclick="switchUserTab('proposals')">✏️ Proponi Termine</button>
+        <button class="admin-tab" onclick="switchUserTab('history')">🕓 Cronologia</button>
+      </div>
+
+      <!-- Saved -->
+      <div id="user-tab-saved">
+        <div class="saved-list" id="saved-list-container"></div>
+      </div>
+
+      <!-- Proposals -->
+      <div id="user-tab-proposals" style="display:none">
+        <div class="form-card">
+          <div class="section-title" style="margin-bottom:4px">Proponi un nuovo termine</div>
+          <p style="font-size:13px;color:var(--ink3);margin-bottom:20px">I termini proposti saranno revisionati dal team editoriale prima della pubblicazione.</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Termine Grecanico <span>*</span></label>
+              <input class="form-input" type="text" placeholder="es. kalimèra" id="prop-word">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Pronuncia (IPA)</label>
+              <input class="form-input" type="text" placeholder="es. /kaliˈmɛra/">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Categoria <span>*</span></label>
+              <select class="form-select" id="prop-cat">
+                <option value="">Seleziona...</option>
+                <option value="noun">Sostantivo</option>
+                <option value="verb">Verbo</option>
+                <option value="adj">Aggettivo</option>
+                <option value="adv">Avverbio</option>
+                <option value="expr">Espressione</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Comune/area</label>
+              <input class="form-input" type="text" placeholder="es. Reggio Calabria">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Traduzione Italiana <span>*</span></label>
+            <input class="form-input" type="text" placeholder="es. buongiorno" id="prop-it">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Definizione / Contesto d'uso</label>
+            <textarea class="form-textarea" placeholder="Descrivi il significato, il contesto d'uso, eventuali varianti dialettali..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Esempio d'uso</label>
+            <input class="form-input" type="text" placeholder="Frase in Grecanico...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Allegati (audio/foto)</label>
+            <div class="upload-zone" onclick="showToast('Funzione di upload disponibile','info')">
+              <div class="upload-icon">📎</div>
+              <div class="upload-text">Clicca per allegare file audio, immagini o documenti</div>
+              <div style="font-size:11px;margin-top:6px;color:var(--ink3)">MP3, WAV, JPG, PNG, PDF · max 20MB</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fonti / Riferimenti bibliografici</label>
+            <textarea class="form-textarea" style="min-height:70px" placeholder="Indica eventuali fonti, testi o persone da cui hai appreso il termine..."></textarea>
+          </div>
+          <button class="btn-primary" onclick="sendProposal()" style="padding:12px 28px">Invia proposta →</button>
+        </div>
+      </div>
+
+      <!-- History -->
+      <div id="user-tab-history" style="display:none">
+        <div class="saved-list" id="history-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: ADMIN ── -->
+  <div class="page" id="page-admin">
+    <div class="admin-header">
+      <div class="admin-title">Pannello Amministrazione</div>
+      <div class="admin-sub">Gestione lemmi, utenti e proposte della piattaforma Γκρεκάνικο</div>
+    </div>
+    <div class="section">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-n">1.240</div><div class="stat-label">Lemmi pubblicati</div><div class="stat-change up">↑ +14 questo mese</div></div>
+        <div class="stat-card"><div class="stat-n">38</div><div class="stat-label">In bozza</div><div class="stat-change">da revisionare</div></div>
+        <div class="stat-card"><div class="stat-n">12</div><div class="stat-label">Proposte utenti</div><div class="stat-change up">↑ +3 nuove</div></div>
+        <div class="stat-card"><div class="stat-n">284</div><div class="stat-label">Utenti registrati</div><div class="stat-change up">↑ +22 questo mese</div></div>
+      </div>
+
+      <div class="admin-tabs" id="admin-tabs">
+        <button class="admin-tab active" onclick="switchAdminTab('lemmi')">📖 Lemmi</button>
+        <button class="admin-tab" onclick="switchAdminTab('proposte')">📥 Proposte</button>
+        <button class="admin-tab" onclick="switchAdminTab('utenti')">👥 Utenti</button>
+        <!--button class="admin-tab" onclick="switchAdminTab('nuovo')">➕ Nuovo Lemma</button-->
+		<button class="admin-tab" onclick="switchAdminTab('nuovo')">➕ Nuovo Lemma</button>
+        <button class="admin-tab" onclick="switchAdminTab('import')">📥 Importa Excel</button>
+      </div>
+
+      <!-- Admin: Lemmi -->
+      <div id="admin-tab-lemmi">
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <input class="form-input" style="flex:1;min-width:180px" type="text" placeholder="Filtra lemmi..." id="admin-filter-input" oninput="renderAdminTable()">
+          <select class="form-select" style="width:160px" id="admin-status-filter" onchange="renderAdminTable()">
+            <option value="">Tutti gli stati</option>
+            <option value="published">Pubblicati</option>
+            <option value="draft">Bozze</option>
+            <option value="review">In revisione</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Termine</th><th>Categoria</th><th>Italiano</th><th>Media</th><th>Stato</th><th>Azioni</th>
+              </tr>
+            </thead>
+            <tbody id="admin-lemmi-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Admin: Proposte -->
+      <div id="admin-tab-proposte" style="display:none">
+        <table class="data-table">
+          <thead><tr><th>Termine</th><th>Proposto da</th><th>Data</th><th>Stato</th><th>Azioni</th></tr></thead>
+          <tbody id="admin-proposals-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Admin: Utenti -->
+      <div id="admin-tab-utenti" style="display:none">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>Nome</th><th>Email</th><th>Ruolo</th><th>Registrato</th><th>Parole salvate</th><th>Azioni</th></tr></thead>
+            <tbody id="admin-users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Admin: Nuovo Lemma -->
+      <div id="admin-tab-nuovo" style="display:none">
+
+        <div class="form-card">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Termine Grecanico <span>*</span></label>
+              <input class="form-input" type="text" placeholder="es. kalimèra" id="admin-word">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Pronuncia (IPA)</label>
+              <input class="form-input" type="text" placeholder="/kaliˈmɛra/">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Categoria grammaticale <span>*</span></label>
+              <select class="form-select" id="admin-cat">
+                <option value="">Seleziona...</option>
+                <option value="noun">Sostantivo</option>
+                <option value="verb">Verbo</option>
+                <option value="adj">Aggettivo</option>
+                <option value="adv">Avverbio</option>
+                <option value="expr">Espressione</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Genere (sostantivi)</label>
+              <select class="form-select">
+                <option value="">—</option>
+                <option value="m">Maschile</option>
+                <option value="f">Femminile</option>
+                <option value="n">Neutro</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Traduzione italiana <span>*</span></label>
+            <input class="form-input" type="text" id="admin-it" placeholder="Traduzione principale">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Definizione estesa</label>
+            <textarea class="form-textarea" id="admin-def" placeholder="Descrizione completa del termine, etimologia, varianti..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Esempio in Grecanico</label>
+            <input class="form-input" id="admin-ex-gr" type="text" placeholder="Frase di esempio in Grecanico">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Traduzione esempio</label>
+            <input class="form-input" id="admin-ex-it" type="text" placeholder="Traduzione della frase di esempio">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tag / Aree tematiche</label>
+            <input class="form-input" type="text" placeholder="es. famiglia, natura, tradizione (separati da virgola)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Comune / Area geografica</label>
+            <input class="form-input" type="text" placeholder="es. Bova, Roghudi, Condofuri...">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">File Audio</label>
+              <div class="upload-zone" onclick="showToast('Upload audio disponibile nell app installata','info')">
+                <div class="upload-icon">🔊</div>
+                <div class="upload-text">MP3, WAV, OGG · max 10MB</div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Immagine</label>
+              <div class="upload-zone" onclick="showToast('Upload immagine disponibile nell app installata','info')">
+                <div class="upload-icon">🖼</div>
+                <div class="upload-text">JPG, PNG, WebP · max 5MB</div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Video</label>
+            <div class="upload-zone" onclick="showToast('Upload video disponibile nell app installata','info')">
+              <div class="upload-icon">🎬</div>
+              <div class="upload-text">MP4, WebM · max 200MB — oppure link YouTube/Vimeo</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stato pubblicazione</label>
+            <select class="form-select" id="admin-status">
+              <option value="draft">Bozza</option>
+              <option value="review">In revisione</option>
+              <option value="published">Pubblica</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn-primary" onclick="saveNewLemma()">Salva lemma →</button>
+            <button class="btn-secondary" onclick="showToast('Bozza salvata','info')">Salva bozza</button>
+          </div>
+        </div>
+      </div>
+    </div>
+	<!-- Admin: Import -->
+<div id="admin-tab-import" style="display:none">
+  <div class="form-card">
+    <div class="section-title" style="margin-bottom:4px">Importazione massiva da Excel</div>
+    <p style="font-size:13px;color:var(--ink3);margin-bottom:20px">
+      Carica un file Excel (.xlsx) o CSV con i lemmi da importare.
+      Scarica il template per vedere il formato corretto.
+    </p>
+    <div style="margin-bottom:20px">
+      <button class="btn-secondary" onclick="downloadTemplate()">📄 Scarica template Excel</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">File Excel / CSV</label>
+      <div class="upload-zone" onclick="document.getElementById('import-file-input').click()" id="import-dropzone">
+        <div class="upload-icon">📊</div>
+        <div class="upload-text">Clicca per selezionare un file Excel o CSV</div>
+        <div style="font-size:11px;margin-top:6px;color:var(--ink3)">.xlsx, .xls, .csv · max 10MB</div>
+        <input type="file" id="import-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportFile(this)">
+      </div>
+    </div>
+    <div id="import-preview" style="display:none">
+      <div class="modal-section-title">Anteprima file</div>
+      <div id="import-preview-content" style="overflow-x:auto;margin-bottom:16px"></div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn-primary" onclick="startImport()" id="import-btn">Importa lemmi →</button>
+        <span id="import-file-name" style="font-size:13px;color:var(--ink3)"></span>
+      </div>
+    </div>
+    <div id="import-result" style="display:none;margin-top:20px"></div>
+  </div>
+</div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- LEMMA MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-content">
+    <div class="modal-handle"></div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ════════════════════════════════════════
+//  DATA
+// ════════════════════════════════════════
+// ════════════════════════════════════════
+//  CONFIG API
+// ════════════════════════════════════════
+// const API = 'http://localhost:3000/api';
+//const API = 'https://grecanico-backend-production.up.railway.app/api';
+const API = 'https://grecanico-backend.onrender.com/api';
+// ════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════
+let currentUser = null;
+let TOKEN = null;
+let LEMMAS = [];
+let savedWords = [];
+let currentFilter = { cat:'all', letter:'' };
+
+// ════════════════════════════════════════
+//  API CLIENT
+// ════════════════════════════════════════
+async function apiFetch(path, options) {
+  var opts = options || {};
+  var headers = { 'Content-Type': 'application/json' };
+  if(TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  opts.headers = headers;
+  try {
+    var res = await fetch(API + path, opts);
+    var data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Errore API');
+    return data;
+  } catch(err) {
+    console.error('API error:', path, err.message);
+    throw err;
+  }
+}
+
+// ════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════
+function switchLoginTab(t) {
+  document.querySelectorAll('.login-tab').forEach(function(el,i){ el.classList.toggle('active', (i===0) === (t==='login')); });
+  document.getElementById('login-form').style.display = t==='login' ? '' : 'none';
+  document.getElementById('register-form').style.display = t==='register' ? '' : 'none';
+}
+
+function loginAs(role) {
+  var creds = {
+    user:  { email:'mario@esempio.it',    password:'user1234' },
+    admin: { email:'admin@grecanico.it',  password:'admin1234' },
+    guest: null,
+  };
+  if(role === 'guest') {
+    currentUser = { name:'Ospite', role:'guest', initials:'OS' };
+    TOKEN = null;
+    applyAuth();
+    return;
+  }
+  var c = creds[role];
+  document.getElementById('login-email').value = c.email;
+  document.getElementById('login-pw').value = c.password;
+  doLogin();
+}
+
+async function doLogin() {
+  var email = document.getElementById('login-email').value.trim();
+  var password = document.getElementById('login-pw').value.trim();
+  if(!email || !password) { showToast('Inserisci email e password','error'); return; }
+  showToast('Accesso in corso...','info');
+  try {
+    var data = await apiFetch('/auth/login', {
+      method:'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    TOKEN = data.token;
+    currentUser = {
+      name: data.user.name,
+      role: data.user.role.toLowerCase(),
+      initials: data.user.name.split(' ').map(function(n){ return n[0]; }).join('').toUpperCase().slice(0,2),
+      id: data.user.id,
+    };
+    localStorage.setItem('token', TOKEN);
+    localStorage.setItem('user', JSON.stringify(currentUser));
+    applyAuth();
+  } catch(err) {
+    showToast('Credenziali non valide','error');
+  }
+}
+
+async function doRegister() {
+  var name = document.querySelector('#register-form input[type=text]').value.trim();
+  var email = document.querySelector('#register-form input[type=email]').value.trim();
+  var password = document.querySelector('#register-form input[type=password]').value.trim();
+  if(!name || !email || !password) { showToast('Compila tutti i campi','error'); return; }
+  try {
+    var data = await apiFetch('/auth/register', {
+      method:'POST',
+      body: JSON.stringify({ name, email, password }),
+    });
+    TOKEN = data.token;
+    currentUser = {
+      name: data.user.name,
+      role: data.user.role.toLowerCase(),
+      initials: data.user.name.split(' ').map(function(n){ return n[0]; }).join('').toUpperCase().slice(0,2),
+      id: data.user.id,
+    };
+    localStorage.setItem('token', TOKEN);
+    localStorage.setItem('user', JSON.stringify(currentUser));
+    applyAuth();
+  } catch(err) {
+    showToast(err.message || 'Errore registrazione','error');
+  }
+}
+function applyAuth() {
+  try {
+    var lp = document.getElementById('login-page');
+    var ap = document.getElementById('app');
+    lp.style.cssText = 'display:none';
+    ap.style.cssText = 'display:flex;flex-direction:column;min-height:100vh';
+    document.getElementById('topbar-avatar').textContent = currentUser.initials;
+    document.getElementById('user-name-display').textContent = currentUser.name;
+    document.getElementById('user-role-display').textContent =
+      currentUser.role === 'admin' ? 'Amministratore della piattaforma' : 'Utente registrato';
+    if(currentUser.role !== 'guest') {
+      document.getElementById('user-btn').style.display = '';
+      document.getElementById('nav-user').style.display = '';
+    }
+    if(currentUser.role === 'admin' || currentUser.role === 'editor') {
+      document.getElementById('admin-btn').style.display = '';
+      document.getElementById('nav-admin').style.display = '';
+    }
+    renderAll();
+    if(currentUser.role !== 'guest') loadSavedWords();
+    showToast('Benvenuto, ' + currentUser.name + '!', 'success');
+  } catch(err) {
+    alert('Errore avvio app: ' + err.message);
+    console.error(err);
+  }
+}
+
+function doLogout() {
+  currentUser = null;
+  TOKEN = null;
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  document.getElementById('login-page').style.cssText = 'display:flex';
+  document.getElementById('app').style.cssText = 'display:none';
+}
+
+// Ripristina sessione al caricamento
+(function restoreSession() {
+  var savedToken = localStorage.getItem('token');
+  var savedUser  = localStorage.getItem('user');
+  if(savedToken && savedUser) {
+    try {
+      TOKEN = savedToken;
+      currentUser = JSON.parse(savedUser);
+      applyAuth();
+    } catch(e) { localStorage.clear(); }
+  }
+})();
+
+// ════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════
+function goPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.toggle('active', el.dataset.page===p));
+  if(p==='user') renderUserPage();
+  if(p==='admin') renderAdminPage();
+  if(p==='search') { document.getElementById('search-results-grid').innerHTML = renderLemmaCards(LEMMAS); }
+  window.scrollTo(0,0);
+}
+
+// ════════════════════════════════════════
+//  RENDER ALL
+// ════════════════════════════════════════
+async function renderAll() {
+  showLoading();
+  try {
+    var data = await apiFetch('/lemmas?limit=100');
+    LEMMAS = (data.data || []).map(normalizeAPILemma);
+    renderAlphabetNav();
+    renderLemmaGrid();
+  } catch(err) {
+    document.getElementById('lemma-grid').innerHTML =
+      '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">⚠️</div><div class="empty-title">Backend non raggiungibile</div><div class="empty-text">Assicurati che il server sia attivo su localhost:3000</div></div>';
+  }
+}
+
+function showLoading() {
+  document.getElementById('lemma-grid').innerHTML =
+    '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">⏳</div><div class="empty-title">Caricamento...</div></div>';
+}
+
+// Normalizza un lemma dall'API al formato usato dal frontend
+function normalizeAPILemma(l) {
+  var ex = l.examples && l.examples[0];
+  return {
+    id:       l.id,
+    word:     l.word,
+    phonetic: l.phonetic || '',
+    cat:      l.category || 'noun',
+    it:       l.translation,
+    def:      l.definition || '',
+    exGr:     ex ? ex.textGr : '',
+    exIt:     ex ? ex.textIt : '',
+    tags:     l.tags || [],
+    area:     l.area || '',
+    hasAudio: l.hasAudio || false,
+    hasPhoto: l.hasPhoto || false,
+    hasVideo: l.hasVideo || false,
+    status:   l.status || 'published',
+    media:    l.media || {},
+  };
+}
+
+async function loadSavedWords() {
+  try {
+    var data = await apiFetch('/user/saved');
+    savedWords = data.map(function(s){ return s.lemma.id; });
+    document.getElementById('saved-count-badge').textContent = savedWords.length;
+  } catch(e) { savedWords = []; }
+}
+
+function renderAlphabetNav() {
+  const letters = [...new Set(LEMMAS.map(l => l.word[0].toUpperCase()))].sort();
+  const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const nav = document.getElementById('alpha-nav');
+  nav.innerHTML = '<button class="alpha-btn active" onclick="filterLetter(this,&quot;&quot;)">Tutti</button>' +
+    letters.map(l => `<button class="alpha-btn" onclick="filterLetter(this,'${l}')">${l}</button>`).join('');
+}
+
+function filterLetter(btn, l) {
+  document.querySelectorAll('.alpha-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter.letter = l;
+  renderLemmaGrid();
+}
+
+function filterCat(cat, btn) {
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter.cat = cat;
+  renderLemmaGrid();
+}
+
+function renderLemmaGrid() {
+  let filtered = LEMMAS;
+  if(currentFilter.letter) filtered = filtered.filter(l => l.word[0].toUpperCase() === currentFilter.letter);
+  if(currentFilter.cat === 'media') filtered = filtered.filter(l => l.hasAudio||l.hasPhoto||l.hasVideo);
+  else if(currentFilter.cat !== 'all') filtered = filtered.filter(l => l.cat === currentFilter.cat);
+  const grid = document.getElementById('lemma-grid');
+  if(!filtered.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📭</div><div class="empty-title">Nessun termine trovato</div><div class="empty-text">Prova con una lettera diversa o rimuovi i filtri attivi.</div></div>`;
+    return;
+  }
+  grid.innerHTML = renderLemmaCards(filtered);
+}
+
+function renderLemmaCards(list) {
+  return list.map((l,i) => `
+    <div class="lemma-card fade-in fade-in-d${(i%3)+1}" onclick="openModal(${l.id})">
+      <div class="lemma-word">${l.word}</div>
+      <div class="lemma-phonetic">${l.phonetic}</div>
+      <div><span class="lemma-cat ${l.cat}">${catLabel(l.cat)}</span></div>
+      <div class="lemma-it"><strong>${l.it}</strong></div>
+      <div class="lemma-media">
+        ${l.hasAudio ? '<span class="media-badge audio">🔊 Audio</span>':''}
+        ${l.hasPhoto ? '<span class="media-badge photo">📷 Foto</span>':''}
+        ${l.hasVideo ? '<span class="media-badge video">🎬 Video</span>':''}
+      </div>
+    </div>`).join('');
+}
+
+function catLabel(c) {
+  return {noun:'Sostantivo',verb:'Verbo',adj:'Aggettivo',adv:'Avverbio',expr:'Espressione'}[c] || c;
+}
+
+// ════════════════════════════════════════
+//  MODAL
+// ════════════════════════════════════════
+async function openModal(id) {
+  var l = LEMMAS.find(function(x){ return x.id === id; });
+  if(!l) {
+    try {
+      var data = await apiFetch('/lemmas/' + id);
+      l = normalizeAPILemma(data);
+    } catch(e) { return; }
+  }
+  var saved = savedWords.includes(id);
+
+  var html = '';
+
+  // Intestazione
+  html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">';
+  html += '<div><div class="modal-word">' + l.word + '</div>';
+  html += '<div class="modal-phonetic">' + l.phonetic + ' · ' + catLabel(l.cat) + ' · ' + (l.area||'') + '</div></div>';
+  html += '<span class="lemma-cat ' + l.cat + '" style="margin-top:6px;flex-shrink:0">' + catLabel(l.cat) + '</span>';
+  html += '</div>';
+
+  // Audio
+  if(l.hasAudio) {
+    html += '<button class="modal-audio-btn" id="audio-btn-' + id + '">▶ Ascolta pronuncia</button>';
+  }
+
+  // Traduzione
+  html += '<div class="modal-section-title">Traduzione italiana</div>';
+  html += '<div class="modal-definition">' + l.it + '</div>';
+
+  // Definizione
+  if(l.def) {
+    html += '<div class="modal-section-title">Definizione</div>';
+    html += '<div class="modal-it">' + l.def + '</div>';
+  }
+
+  // Esempio
+  if(l.exGr) {
+    html += '<div class="modal-section-title">Esempio d\'uso</div>';
+    html += '<div class="modal-example">';
+    html += '<div class="modal-example-gr">«' + l.exGr + '»</div>';
+    html += '<div class="modal-example-it">' + l.exIt + '</div>';
+    html += '</div>';
+  }
+
+  // Tag
+  if(l.tags && l.tags.length) {
+    html += '<div class="modal-section-title">Tag tematici</div>';
+    html += '<div class="modal-tags">';
+    l.tags.forEach(function(t){ html += '<span class="modal-tag">' + t + '</span>'; });
+    html += '</div>';
+  }
+
+  // Media
+  html += '<div class="modal-section-title">Media associati</div>';
+  html += '<div class="lemma-media">';
+  html += l.hasAudio ? '<span class="media-badge audio">🔊 Audio</span>' : '<span class="media-badge" style="opacity:.4">🔊 —</span>';
+  html += l.hasPhoto ? '<span class="media-badge photo">📷 Foto</span>' : '<span class="media-badge" style="opacity:.4">📷 —</span>';
+  html += l.hasVideo ? '<span class="media-badge video">🎬 Video</span>' : '<span class="media-badge" style="opacity:.4">🎬 —</span>';
+  html += '</div>';
+
+  // Azioni
+  html += '<div class="modal-actions">';
+
+  // Bottone coniugazione (solo verbi)
+  if(l.cat === 'verb') {
+    html += '<button class="btn-secondary" id="conj-btn-' + id + '">📋 Coniugazione</button>';
+  }
+
+  // Bottone salva (solo utenti loggati)
+  if(currentUser && currentUser.role !== 'guest') {
+    html += '<button class="btn-primary" id="save-btn-' + id + '">'+  (saved ? '❤️ Salvato' : '🤍 Salva') + '</button>';
+  }
+
+  // Bottone condividi
+  html += '<button class="btn-secondary" id="share-btn-' + id + '">📤 Condividi</button>';
+  html += '</div>';
+
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('open');
+
+  // Collega eventi dopo che il DOM è pronto
+  var audioBtn = document.getElementById('audio-btn-' + id);
+  if(audioBtn) audioBtn.addEventListener('click', function(){ playAudio(this, l.word); });
+
+  var saveBtn = document.getElementById('save-btn-' + id);
+  if(saveBtn) saveBtn.addEventListener('click', function(){ toggleSave(id); });
+
+  var shareBtn = document.getElementById('share-btn-' + id);
+  if(shareBtn) shareBtn.addEventListener('click', function(){ shareWord(l.word); });
+
+  var conjBtn = document.getElementById('conj-btn-' + id);
+  if(conjBtn) conjBtn.addEventListener('click', function(){ openConjugationModal(id, l.word); });
+}
+
+function closeModal(e) {
+  if(!e || e.target===document.getElementById('modal-overlay') || !e.target) {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+
+function playAudio(btn, word) {
+  btn.textContent = '⏹ Riproduzione...';
+  setTimeout(() => { btn.textContent = '▶ Ascolta pronuncia'; showToast(`Audio: "${word}" — simulato`, 'info'); }, 1800);
+}
+
+async function toggleSave(id) {
+  if(!currentUser || currentUser.role === 'guest') { showToast('Accedi per salvare le parole','info'); return; }
+  var btn = document.getElementById('save-btn-'+id);
+  var idx = savedWords.indexOf(id);
+  try {
+    if(idx >= 0) {
+      await apiFetch('/user/saved/'+id, { method:'DELETE' });
+      savedWords.splice(idx, 1);
+      if(btn) btn.textContent = 'Salva';
+      showToast('Rimosso dai salvati','info');
+    } else {
+      await apiFetch('/user/saved/'+id, { method:'POST' });
+      savedWords.push(id);
+      if(btn) btn.textContent = 'Salvato';
+      showToast('Aggiunto ai salvati','success');
+    }
+    document.getElementById('saved-count-badge').textContent = savedWords.length;
+  } catch(err) {
+    showToast('Errore nel salvataggio','error');
+  }
+}
+
+async function sendProposal() {
+  var w  = document.getElementById('prop-word').value.trim();
+  var it = document.getElementById('prop-it').value.trim();
+  var cat = document.getElementById('prop-cat').value;
+  if(!w || !it) { showToast('Compila almeno il termine e la traduzione','error'); return; }
+  try {
+    await apiFetch('/user/proposals', {
+      method:'POST',
+      body: JSON.stringify({ word:w, translation:it, category:cat||undefined }),
+    });
+    showToast('Proposta per "' + w + '" inviata!', 'success');
+    document.getElementById('prop-word').value = '';
+    document.getElementById('prop-it').value = '';
+    document.getElementById('prop-cat').value = '';
+  } catch(err) {
+    showToast('Errore nell invio della proposta','error');
+  }
+}
+
+function shareWord(word) {
+  if(navigator.share) navigator.share({ title:'Grecanico · '+word, url: location.href });
+  else { showToast('Link copiato negli appunti','success'); }
+}
+
+// ════════════════════════════════════════
+//  SEARCH
+// ════════════════════════════════════════
+function doHeroSearch() {
+  var q = document.getElementById('hero-search-input').value.trim();
+  if(!q) return;
+  document.getElementById('topbar-search-input').value = q;
+  doTopSearch(q);
+}
+function doTopSearch(q) {
+  q = q || document.getElementById('topbar-search-input').value.trim();
+  if(!q) return;
+  document.getElementById('adv-search-input').value = q;
+  goPage('search');
+  doAdvSearch(q);
+}
+async function doAdvSearch(forceQ) {
+  var q   = forceQ || document.getElementById('adv-search-input').value.trim();
+  var cat = document.getElementById('adv-cat-filter').value;
+  document.getElementById('search-query-label').textContent = q ? '"' + q + '"' : 'Tutti i termini';
+  document.getElementById('search-count-label').textContent = 'Ricerca in corso...';
+  document.getElementById('search-results-grid').innerHTML =
+    '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">⏳</div><div class="empty-title">Ricerca...</div></div>';
+  try {
+    var url = '/search?q=' + encodeURIComponent(q);
+    if(cat) url += '&category=' + cat;
+    var data = await apiFetch(url);
+    var results = (data.data || []).map(normalizeAPILemma);
+    document.getElementById('search-count-label').textContent = results.length + ' termini trovati';
+    document.getElementById('search-results-grid').innerHTML = results.length
+      ? renderLemmaCards(results)
+      : '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-title">Nessun risultato</div><div class="empty-text">Vuoi proporre il termine?</div><br><button class="btn-primary" onclick="goPage(\'user\');switchUserTab(\'proposals\')">Proponi il termine</button></div>';
+  } catch(err) {
+    document.getElementById('search-count-label').textContent = 'Errore nella ricerca';
+  }
+}
+
+// ════════════════════════════════════════
+//  USER PAGE
+// ════════════════════════════════════════
+function switchUserTab(t) {
+  ['saved','proposals','history'].forEach(function(tab) {
+    document.getElementById('user-tab-'+tab).style.display = tab===t ? '' : 'none';
+  });
+  document.querySelectorAll('#page-user .admin-tab').forEach(function(el,i) {
+    el.classList.toggle('active', ['saved','proposals','history'][i]===t);
+  });
+  if(t==='saved') renderSavedList();
+  if(t==='history') renderHistory();
+}
+
+async function renderUserPage() {
+  await loadSavedWords();
+  renderSavedList();
+}
+
+async function renderSavedList() {
+  var container = document.getElementById('saved-list-container');
+  container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3)">Caricamento...</div>';
+  try {
+    var data = await apiFetch('/user/saved');
+    if(!data.length) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">🤍</div><div class="empty-title">Nessuna parola salvata</div><div class="empty-text">Naviga il dizionario e salva i termini che vuoi ricordare.</div></div>';
+      return;
+    }
+    container.innerHTML = data.map(function(s) {
+      var l = s.lemma;
+      return '<div class="saved-item" onclick="openModal(' + l.id + ')">' +
+        '<div><div class="saved-word">' + l.word + '</div><div class="saved-it">' + l.translation + '</div></div>' +
+        '<span class="saved-date">' + new Date(s.savedAt).toLocaleDateString('it-IT') + '</span>' +
+        '<button class="saved-remove" onclick="event.stopPropagation();toggleSave(' + l.id + ').then(()=>renderSavedList())" title="Rimuovi">x</button>' +
+        '</div>';
+    }).join('');
+  } catch(err) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-title">Errore nel caricamento</div></div>';
+  }
+}
+
+async function renderHistory() {
+  var container = document.getElementById('history-list');
+  try {
+    var data = await apiFetch('/user/history');
+    if(!data.length) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">🕓</div><div class="empty-title">Nessuna ricerca effettuata</div></div>';
+      return;
+    }
+    container.innerHTML = data.map(function(h) {
+      return '<div class="saved-item"><div><div class="saved-word">' + h.query + '</div></div>' +
+        '<span class="saved-date">' + new Date(h.searchedAt).toLocaleDateString('it-IT') + '</span></div>';
+    }).join('');
+  } catch(err) {
+    container.innerHTML = '';
+  }
+}
+
+// ════════════════════════════════════════
+//  ADMIN PAGE
+// ════════════════════════════════════════
+function switchAdminTab(t) {
+  //['lemmi','proposte','utenti','nuovo'].forEach(function(tab) {
+['lemmi','proposte','utenti','nuovo','import'].forEach(function(tab) {
+   document.getElementById('admin-tab-'+tab).style.display = tab===t ? '' : 'none';
+  });
+  document.querySelectorAll('#page-admin .admin-tab').forEach(function(el,i) {
+   // el.classList.toggle('active', ['lemmi','proposte','utenti','nuovo'][i]===t);
+   el.classList.toggle('active', ['lemmi','proposte','utenti','nuovo','import'][i]===t);
+  });
+}
+
+async function renderAdminPage() {
+  renderAdminTable();
+  renderAdminProposals();
+  renderAdminUsers();
+  try {
+    var stats = await apiFetch('/admin/stats');
+    document.querySelectorAll('.stat-n')[0].textContent = stats.totalLemmas || 0;
+    document.querySelectorAll('.stat-n')[3].textContent = stats.totalUsers || 0;
+  } catch(e) {}
+}
+
+async function renderAdminTable() {
+  var q = (document.getElementById('admin-filter-input')||{}).value||'';
+  var s = (document.getElementById('admin-status-filter')||{}).value||'';
+  var url = '/admin/lemmas?limit=50';
+  if(q) url += '&q=' + encodeURIComponent(q);
+  if(s) url += '&status=' + s.toUpperCase();
+  try {
+    var data = await apiFetch(url);
+    document.getElementById('admin-lemmi-tbody').innerHTML = (data.data||[]).map(function(l) {
+      return '<tr>' +
+        '<td class="word-cell">' + l.word + '</td>' +
+        '<td><span class="lemma-cat ' + (l.category||'').toLowerCase() + '">' + catLabel(l.category) + '</span></td>' +
+        '<td>' + l.translation + '</td>' +
+        '<td>' + (l.media||[]).map(function(m){ return m.type==='AUDIO'?'🔊':m.type==='PHOTO'?'📷':'🎬'; }).join(' ') + '</td>' +
+        '<td><span class="status-badge ' + (l.status||'').toLowerCase() + '">' + statusLabel(l.status) + '</span></td>' +
+        '<td><div class="action-btns">' +
+         '<button class="btn-sm" onclick="openModal(' + l.id + ')">Vedi</button>' +
+         '<button class="btn-sm" onclick="openEditModal(' + l.id + ')">Modifica</button>' +
+          '<button class="btn-sm danger" onclick="deleteLemma(' + l.id + ')">Elimina</button>' +
+        '</div></td>' +
+        '</tr>';
+    }).join('');
+  } catch(err) {
+    document.getElementById('admin-lemmi-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ink3)">Errore caricamento</td></tr>';
+  }
+}
+
+async function deleteLemma(id) {
+  if(!confirm('Eliminare questo lemma?')) return;
+  try {
+    await apiFetch('/admin/lemmas/'+id, { method:'DELETE' });
+    showToast('Lemma eliminato','success');
+    renderAdminTable();
+  } catch(err) { showToast('Errore eliminazione','error'); }
+}
+
+async function renderAdminProposals() {
+  try {
+    var data = await apiFetch('/admin/proposals');
+    document.getElementById('admin-proposals-tbody').innerHTML = data.map(function(p) {
+      return '<tr>' +
+        '<td class="word-cell">' + p.word + ' <span style="font-size:13px;font-weight:400;color:var(--ink3)">· ' + p.translation + '</span></td>' +
+        '<td>' + (p.user ? p.user.name : 'Anonimo') + '</td>' +
+        '<td>' + new Date(p.createdAt).toLocaleDateString('it-IT') + '</td>' +
+        '<td><span class="status-badge ' + (p.status||'').toLowerCase() + '">' + statusLabel(p.status) + '</span></td>' +
+        '<td><div class="action-btns">' +
+          '<button class="btn-sm success" onclick="reviewProposal(' + p.id + ',\'APPROVED\')">Approva</button>' +
+          '<button class="btn-sm danger" onclick="reviewProposal(' + p.id + ',\'REJECTED\')">Rifiuta</button>' +
+        '</div></td>' +
+        '</tr>';
+    }).join('');
+  } catch(err) {}
+}
+
+async function reviewProposal(id, status) {
+  try {
+    await apiFetch('/admin/proposals/'+id, { method:'PATCH', body: JSON.stringify({ status }) });
+    showToast(status === 'APPROVED' ? 'Proposta approvata' : 'Proposta rifiutata', status === 'APPROVED' ? 'success' : 'info');
+    renderAdminProposals();
+  } catch(err) { showToast('Errore','error'); }
+}
+
+async function renderAdminUsers() {
+  try {
+    var data = await apiFetch('/admin/users');
+    var roleColors = { ADMIN:'published', EDITOR:'review', USER:'draft' };
+    document.getElementById('admin-users-tbody').innerHTML = data.map(function(u) {
+      return '<tr>' +
+        '<td><strong>' + u.name + '</strong></td>' +
+        '<td style="color:var(--ink3);font-size:13px">' + u.email + '</td>' +
+        '<td><span class="status-badge ' + (roleColors[u.role]||'draft') + '">' + u.role + '</span></td>' +
+        '<td style="color:var(--ink3);font-size:13px">' + new Date(u.createdAt).toLocaleDateString('it-IT') + '</td>' +
+        '<td style="text-align:center">' + (u._count ? u._count.savedWords : 0) + '</td>' +
+        '<td><div class="action-btns">' +
+       '<button class="btn-sm" onclick="openEditUserModal(' + u.id + ',\'' + u.name + '\',\'' + u.email + '\',\'' + u.role + '\',' + u.isActive + ')">Modifica</button>' +
+'<button class="btn-sm danger" onclick="deleteUser(' + u.id + ',\'' + u.name + '\')">Elimina</button>' +
+        '</div></td>' +
+        '</tr>';
+    }).join('');
+  } catch(err) {}
+}
+
+async function suspendUser(id, active) {
+  try {
+    await apiFetch('/admin/users/'+id+'/suspend', { method:'PATCH', body: JSON.stringify({ active }) });
+    showToast(active ? 'Utente riattivato' : 'Utente sospeso', 'info');
+    renderAdminUsers();
+  } catch(err) { showToast('Errore','error'); }
+}
+
+async function saveNewLemma() {
+  var w   = document.getElementById('admin-word').value.trim();
+  var it  = document.getElementById('admin-it').value.trim();
+  var cat = document.getElementById('admin-cat').value;
+  var def = document.getElementById('admin-def').value.trim();
+  var exGr = document.getElementById('admin-ex-gr').value.trim();
+  var exIt = document.getElementById('admin-ex-it').value.trim();
+  var status = document.getElementById('admin-status').value;
+  if(!w || !it || !cat) { showToast('Compila almeno il termine, la traduzione e la categoria','error'); return; }
+  try {
+    await apiFetch('/admin/lemmas', {
+      method:'POST',
+      body: JSON.stringify({
+        word:w, translation:it, category:cat, definition:def, status,
+        examples: exGr ? [{ textGr:exGr, textIt:exIt }] : [],
+      }),
+    });
+    showToast('Lemma "' + w + '" salvato!', 'success');
+    await renderAll();
+    switchAdminTab('lemmi');
+    renderAdminTable();
+  } catch(err) { showToast('Errore nel salvataggio: ' + err.message, 'error'); }
+}
+function statusLabel(s) {
+  return { published:'Pubblicato', draft:'Bozza', review:'In revisione', pending:'In attesa' }[s] || s;
+}
+// ════════════════════════════════════════
+//  EDIT MODAL
+// ════════════════════════════════════════
+async function openEditModal(id) {
+  var l;
+  try {
+    var data = await apiFetch('/admin/lemmas?q=&limit=100');
+l = (data.data || []).find(function(x){ return x.id === id; });
+if(!l) throw new Error('non trovato');
+  } catch(err) {
+    showToast('Errore nel caricamento del lemma', 'error');
+    return;
+  }
+
+  document.getElementById('modal-body').innerHTML =
+    '<div class="modal-handle"></div>' +
+    '<h2 style="font-family:var(--font-display);font-size:26px;margin-bottom:20px">Modifica lemma</h2>' +
+
+    '<div class="form-row">' +
+      '<div class="form-group">' +
+        '<label class="form-label">Termine Grecanico</label>' +
+        '<input class="form-input" id="edit-word" value="' + (l.word||'') + '">' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label class="form-label">Pronuncia IPA</label>' +
+        '<input class="form-input" id="edit-phonetic" value="' + (l.phonetic||'') + '">' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="form-row">' +
+      '<div class="form-group">' +
+        '<label class="form-label">Traduzione italiana</label>' +
+        '<input class="form-input" id="edit-translation" value="' + (l.translation||'') + '">' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label class="form-label">Categoria</label>' +
+        '<select class="form-select" id="edit-category">' +
+          '<option value="NOUN"' + (l.category==='noun'?' selected':'') + '>Sostantivo</option>' +
+          '<option value="VERB"' + (l.category==='verb'?' selected':'') + '>Verbo</option>' +
+          '<option value="ADJ"'  + (l.category==='adj'?' selected':'') + '>Aggettivo</option>' +
+          '<option value="ADV"'  + (l.category==='adv'?' selected':'') + '>Avverbio</option>' +
+          '<option value="EXPR"' + (l.category==='expr'?' selected':'') + '>Espressione</option>' +
+        '</select>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="form-group">' +
+      '<label class="form-label">Area geografica</label>' +
+      '<input class="form-input" id="edit-area" value="' + (l.area||'') + '">' +
+    '</div>' +
+
+    '<div class="form-group">' +
+      '<label class="form-label">Definizione</label>' +
+      '<textarea class="form-textarea" id="edit-definition">' + (l.definition||'') + '</textarea>' +
+    '</div>' +
+
+    '<div class="form-group">' +
+      '<label class="form-label">Stato</label>' +
+      '<select class="form-select" id="edit-status">' +
+        '<option value="DRAFT"'     + (l.status==='draft'?' selected':'') + '>Bozza</option>' +
+        '<option value="REVIEW"'    + (l.status==='review'?' selected':'') + '>In revisione</option>' +
+        '<option value="PUBLISHED"' + (l.status==='published'?' selected':'') + '>Pubblicato</option>' +
+      '</select>' +
+    '</div>' +
+
+    '<div class="modal-actions">' +
+      '<button class="btn-primary" onclick="saveLemmaEdit(' + id + ')">Salva modifiche</button>' +
+      '<button class="btn-secondary" onclick="closeModal()">Annulla</button>' +
+    '</div>';
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+async function saveLemmaEdit(id) {
+  var word        = document.getElementById('edit-word').value.trim();
+  var phonetic    = document.getElementById('edit-phonetic').value.trim();
+  var translation = document.getElementById('edit-translation').value.trim();
+  var category    = document.getElementById('edit-category').value;
+  var area        = document.getElementById('edit-area').value.trim();
+  var definition  = document.getElementById('edit-definition').value.trim();
+  var status      = document.getElementById('edit-status').value;
+
+  if(!word || !translation) {
+    showToast('Termine e traduzione sono obbligatori', 'error');
+    return;
+  }
+
+  try {
+    await apiFetch('/admin/lemmas/' + id, {
+      method: 'PUT',
+      body: JSON.stringify({ word, phonetic, translation, category, area, definition, status }),
+    });
+    showToast('Lemma aggiornato con successo!', 'success');
+    closeModal();
+    await renderAll();
+    renderAdminTable();
+  } catch(err) {
+    showToast('Errore nel salvataggio: ' + err.message, 'error');
+  }
+}
+// ════════════════════════════════════════
+//  EDIT USER MODAL
+// ════════════════════════════════════════
+function openEditUserModal(id, name, email, role, isActive) {
+  document.getElementById('modal-body').innerHTML =
+    '<h2 style="font-family:var(--font-display);font-size:26px;margin-bottom:20px">Modifica utente</h2>' +
+
+    '<div class="form-group">' +
+      '<label class="form-label">Nome</label>' +
+      '<input class="form-input" id="edit-user-name" value="' + name + '">' +
+    '</div>' +
+
+    '<div class="form-group">' +
+      '<label class="form-label">Email</label>' +
+      '<input class="form-input" id="edit-user-email" value="' + email + '" type="email">' +
+    '</div>' +
+
+    '<div class="form-group">' +
+      '<label class="form-label">Ruolo</label>' +
+      '<select class="form-select" id="edit-user-role">' +
+        '<option value="USER"'   + (role==='USER'?' selected':'')   + '>Utente</option>' +
+        '<option value="EDITOR"' + (role==='EDITOR'?' selected':'') + '>Editor</option>' +
+        '<option value="ADMIN"'  + (role==='ADMIN'?' selected':'')  + '>Admin</option>' +
+      '</select>' +
+    '</div>' +
+
+    '<div class="form-group">' +
+      '<label class="form-label">Stato account</label>' +
+      '<select class="form-select" id="edit-user-active">' +
+        '<option value="true"'  + (isActive?' selected':'')  + '>Attivo</option>' +
+        '<option value="false"' + (!isActive?' selected':'') + '>Sospeso</option>' +
+      '</select>' +
+    '</div>' +
+
+    '<div class="form-group">' +
+      '<label class="form-label">Nuova password (lascia vuoto per non cambiare)</label>' +
+      '<input class="form-input" id="edit-user-pw" type="password" placeholder="Min. 8 caratteri">' +
+    '</div>' +
+
+    '<div class="modal-actions">' +
+      '<button class="btn-primary" onclick="saveUserEdit(' + id + ')">Salva modifiche</button>' +
+      '<button class="btn-secondary" onclick="closeModal()">Annulla</button>' +
+    '</div>';
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+async function saveUserEdit(id) {
+  var role     = document.getElementById('edit-user-role').value;
+  var isActive = document.getElementById('edit-user-active').value === 'true';
+  var pw       = document.getElementById('edit-user-pw').value.trim();
+
+  try {
+    // Cambia ruolo
+    await apiFetch('/admin/users/' + id + '/role', {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    });
+
+    // Cambia stato attivo/sospeso
+    await apiFetch('/admin/users/' + id + '/suspend', {
+      method: 'PATCH',
+      body: JSON.stringify({ active: isActive }),
+    });
+
+    // Cambia password se inserita
+    if(pw) {
+      if(pw.length < 8) {
+        showToast('La password deve essere di almeno 8 caratteri', 'error');
+        return;
+      }
+      await apiFetch('/admin/users/' + id + '/password', {
+        method: 'PATCH',
+        body: JSON.stringify({ password: pw }),
+      });
+    }
+
+    showToast('Utente aggiornato con successo!', 'success');
+    closeModal();
+    renderAdminUsers();
+  } catch(err) {
+    showToast('Errore: ' + err.message, 'error');
+  }
+}
+
+async function deleteUser(id, name) {
+  if(!confirm('Eliminare definitivamente l\'utente ' + name + '?\nQuesta operazione non è reversibile.')) return;
+  try {
+    await apiFetch('/admin/users/' + id, { method: 'DELETE' });
+    showToast('Utente ' + name + ' eliminato', 'success');
+    renderAdminUsers();
+  } catch(err) {
+    showToast('Errore eliminazione: ' + err.message, 'error');
+  }
+}
+
+// ════════════════════════════════════════
+//  IMPORT EXCEL
+// ════════════════════════════════════════
+var importFile = null;
+
+function downloadTemplate() {
+  var rows = [
+    ['Termine','Pronuncia','Traduzione','Categoria','Definizione','Area','Esempio Grecanico','Esempio Italiano','Tag','Stato'],
+    ['Kalimera','/kalimera/','Buongiorno','EXPR','Saluto mattutino grecanico','Bova','Kalimera, pos ise?','Buongiorno, come stai?','saluti,quotidiano','PUBLISHED'],
+    ['Thalassa','/thalassa/','Mare','NOUN','Il mare','Galliciano','Pame stin thalassa?','Andiamo al mare?','natura','PUBLISHED'],
+  ];
+  var csv = rows.map(function(r){ return r.map(function(c){ return '"'+c+'"'; }).join(','); }).join('\n');
+  var blob = new Blob(['\uFEFF'+csv], { type:'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'template_grecanico.csv';
+  a.click();
+  showToast('Template scaricato!', 'success');
+}
+
+function handleImportFile(input) {
+  importFile = input.files[0];
+  if(!importFile) return;
+  document.getElementById('import-file-name').textContent = importFile.name + ' (' + Math.round(importFile.size/1024) + ' KB)';
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var preview = document.getElementById('import-preview-content');
+      var text = e.target.result;
+      var lines = text.split('\n').slice(0,6);
+      var html = '<table class="data-table" style="font-size:12px"><thead><tr>';
+      var headers = lines[0].split(',').map(function(h){ return h.replace(/"/g,'').trim(); });
+      headers.forEach(function(h){ html += '<th>' + h + '</th>'; });
+      html += '</tr></thead><tbody>';
+      for(var i=1;i<Math.min(lines.length,6);i++) {
+        if(!lines[i].trim()) continue;
+        html += '<tr>';
+        lines[i].split(',').forEach(function(c){ html += '<td>' + c.replace(/"/g,'').trim() + '</td>'; });
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+      if(lines.length > 6) html += '<p style="font-size:12px;color:var(--ink3);margin-top:8px">... e altre ' + (lines.length-6) + ' righe</p>';
+      preview.innerHTML = html;
+      document.getElementById('import-preview').style.display = '';
+    } catch(e) {
+      showToast('Errore nella lettura del file', 'error');
+    }
+  };
+  reader.readAsText(importFile, 'utf-8');
+}
+
+async function startImport() {
+  if(!importFile) return;
+  var btn = document.getElementById('import-btn');
+  btn.textContent = 'Importazione in corso...';
+  btn.disabled = true;
+  var formData = new FormData();
+  formData.append('file', importFile);
+  try {
+    var res = await fetch('http://localhost:3000/api/admin/import', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + TOKEN },
+      body: formData,
+    });
+    var data = await res.json();
+    var result = document.getElementById('import-result');
+    result.style.display = '';
+    if(data.success) {
+      result.innerHTML =
+        '<div style="background:#e0f5e8;border-radius:var(--radius);padding:16px;border-left:4px solid var(--olive)">' +
+        '<div style="font-weight:600;color:#1a6b35;margin-bottom:8px">Importazione completata!</div>' +
+        '<div style="font-size:14px;color:#1a6b35">✅ Lemmi importati: <strong>' + data.created + '</strong></div>' +
+        (data.skipped ? '<div style="font-size:14px;color:#7a6020;margin-top:4px">⚠️ Righe saltate: <strong>' + data.skipped + '</strong></div>' : '') +
+        (data.errors && data.errors.length ? '<div style="margin-top:12px;font-size:12px;color:var(--ink3)">' + data.errors.join('<br>') + '</div>' : '') +
+        '</div>';
+      await renderAll();
+      renderAdminTable();
+      showToast('Importati ' + data.created + ' lemmi!', 'success');
+    } else {
+      result.innerHTML = '<div style="background:#f5e0e0;border-radius:var(--radius);padding:16px;border-left:4px solid var(--terracotta)"><strong>Errore:</strong> ' + (data.error||'Importazione fallita') + '</div>';
+    }
+  } catch(err) {
+    showToast('Errore di connessione', 'error');
+  } finally {
+    btn.textContent = 'Importa lemmi →';
+    btn.disabled = false;
+  }
+}
+// ════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════
+// ════════════════════════════════════════
+//  CONIUGAZIONE VERBI
+// ════════════════════════════════════════
+var MOODS  = ['Indicativo','Congiuntivo','Imperativo','Condizionale'];
+var TENSES = ['Presente','Imperfetto','Passato remoto','Futuro'];
+var PERSONS = [
+  { key:'person1s', label:'Io' },
+  { key:'person2s', label:'Tu' },
+  { key:'person3s', label:'Lui / Lei' },
+  { key:'person1p', label:'Noi' },
+  { key:'person2p', label:'Voi' },
+  { key:'person3p', label:'Loro' },
+];
+
+async function openConjugationModal(lemmaId, word) {
+  closeModal();
+  setTimeout(async function() {
+    var conj = [];
+    try { conj = await apiFetch('/lemmas/' + lemmaId + '/conjugations'); } catch(e) {}
+
+    var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'editor');
+
+    var html = '<h2 style="font-family:var(--font-display);font-size:28px;font-weight:600;margin-bottom:4px">' + word + '</h2>';
+    html += '<div style="font-size:13px;color:var(--ink3);margin-bottom:20px">Tavola di coniugazione · Grecanico</div>';
+
+    if(!conj.length) {
+      html += '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Nessuna coniugazione inserita</div></div>';
+    } else {
+      MOODS.forEach(function(mood) {
+        var moodConj = conj.filter(function(c){ return c.mood === mood; });
+        if(!moodConj.length) return;
+        html += '<div class="modal-section-title">' + mood + '</div>';
+        html += '<div style="overflow-x:auto;margin-bottom:16px"><table style="width:100%;border-collapse:collapse;font-size:14px">';
+        html += '<thead><tr><th style="text-align:left;padding:6px 10px;border-bottom:2px solid var(--cream3);font-size:11px;letter-spacing:.08em;color:var(--ink3)">TEMPO</th>';
+        PERSONS.forEach(function(p){ html += '<th style="padding:6px 10px;border-bottom:2px solid var(--cream3);font-size:11px;letter-spacing:.08em;color:var(--ink3)">' + p.label + '</th>'; });
+        html += '</tr></thead><tbody>';
+        moodConj.forEach(function(c, i) {
+          var bg = i % 2 === 0 ? 'background:var(--cream2)' : '';
+          html += '<tr style="' + bg + '">';
+          html += '<td style="padding:8px 10px;font-weight:600;color:var(--ink2);font-size:13px">' + c.tense + '</td>';
+          PERSONS.forEach(function(p){ html += '<td style="padding:8px 10px;text-align:center;font-family:var(--font-display);font-size:16px">' + (c[p.key] || '—') + '</td>'; });
+          html += '</tr>';
+          if(c.notes) html += '<tr><td colspan="7" style="padding:4px 10px 10px;font-size:12px;color:var(--ink3);font-style:italic">' + c.notes + '</td></tr>';
+        });
+        html += '</tbody></table></div>';
+      });
+    }
+
+    if(isAdmin) {
+      html += '<div class="modal-section-title">Aggiungi forma verbale</div>';
+      html += '<div class="form-row">';
+      html += '<div class="form-group"><label class="form-label">Modo</label><select class="form-select" id="conj-mood">';
+      MOODS.forEach(function(m){ html += '<option>' + m + '</option>'; });
+      html += '</select></div>';
+      html += '<div class="form-group"><label class="form-label">Tempo</label><select class="form-select" id="conj-tense">';
+      TENSES.forEach(function(t){ html += '<option>' + t + '</option>'; });
+      html += '</select></div></div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">';
+      PERSONS.forEach(function(p){
+        html += '<div class="form-group"><label class="form-label">' + p.label + '</label><input class="form-input" id="conj-' + p.key + '" placeholder="forma verbale..."></div>';
+      });
+      html += '</div>';
+      html += '<div class="form-group"><label class="form-label">Note (irregolarità, varianti)</label><input class="form-input" id="conj-notes" placeholder="es. forma irregolare..."></div>';
+      html += '<button class="btn-primary" onclick="saveConjugation(' + lemmaId + ',\'' + word + '\')">Salva coniugazione</button>';
+    }
+
+    document.getElementById('modal-body').innerHTML = html;
+    document.getElementById('modal-overlay').classList.add('open');
+  }, 150);
+}
+
+async function saveConjugation(lemmaId, word) {
+  var mood = document.getElementById('conj-mood').value;
+  var tense = document.getElementById('conj-tense').value;
+  var data = { mood, tense, notes: document.getElementById('conj-notes').value };
+  PERSONS.forEach(function(p){
+    var val = document.getElementById('conj-' + p.key).value.trim();
+    if(val) data[p.key] = val;
+  });
+  try {
+    await apiFetch('/admin/lemmas/' + lemmaId + '/conjugations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    showToast('Coniugazione salvata!', 'success');
+    openConjugationModal(lemmaId, word);
+  } catch(err) {
+    showToast('Errore nel salvataggio', 'error');
+  }
+}
+function showToast(msg, type='info') {
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  container.appendChild(toast);
+  requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('show')));
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 3500);
+}
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+</script>
+</body>
+</html>
