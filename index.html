@@ -387,6 +387,15 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--ink
   .scheda-word{font-size:31px}
 }
 
+
+.admin-media-box{background:#fbf8f1;border:1px solid var(--cream3);border-radius:14px;padding:18px;margin:18px 0}
+.admin-media-box h3{font-family:var(--font-display);font-size:23px;margin-bottom:4px;color:var(--ink2)}
+.admin-media-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 14px}
+.admin-media-note{font-size:12px;color:var(--ink3);margin-bottom:12px}
+.admin-media-existing{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--cream3);padding:8px 0;font-size:12px;overflow-wrap:anywhere}
+.admin-media-existing a{color:var(--ink2);max-width:100%;overflow-wrap:anywhere}
+@media(max-width:580px){.admin-media-row{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -616,7 +625,7 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--ink
         </div>
         <div style="overflow-x:auto">
           <table class="data-table">
-            <thead><tr><th>Termine</th><th>Direzione</th><th>Categoria</th><th>Traduzione</th><th>Stato</th><th>Azioni</th></tr></thead>
+            <thead><tr><th>Termine</th><th>Direzione</th><th>Categoria</th><th>Traduzione</th><th>Media</th><th>Stato</th><th>Azioni</th></tr></thead>
             <tbody id="admin-lemmi-tbody"></tbody>
           </table>
         </div>
@@ -689,6 +698,8 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--ink
               </select>
             </div>
           </div>
+          <div class="form-group"><label class="form-label" for="admin-phonetic">Pronuncia fonetica (IPA)</label><input class="form-input" id="admin-phonetic" placeholder="es. /papˈpu/"></div>
+          <div class="admin-media-box" id="admin-media-fields"></div>
           <div class="form-group" style="background:var(--cream2);border:1px solid var(--cream3);border-radius:var(--radius);padding:14px 16px">
             <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:14px">
               <input type="checkbox" id="admin-create-reverse" style="margin-top:5px;accent-color:var(--gold)">
@@ -1254,6 +1265,7 @@ async function renderAdminTable() {
         '<td><span style="font-size:11px;font-weight:600;color:var(--ink3)">'+dirLabel+'</span></td>' +
         '<td>'+(l.grammaticalCategory||catLabel(l.category))+'</td>' +
         '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+l.translation+'</td>' +
+        '<td><div class="lex-badges" style="margin:0">'+(mediaBadges({hasAudio:(l.media||[]).some(function(m){return m.type==='AUDIO';}),hasPhoto:(l.media||[]).some(function(m){return m.type==='PHOTO';}),hasVideo:(l.media||[]).some(function(m){return m.type==='VIDEO';})})||'—')+'</div></td>' +
         '<td><span class="status-badge '+(l.status||'').toLowerCase()+'">'+statusLabel(l.status)+'</span></td>' +
         '<td><div class="action-btns">' +
           '<button class="btn-sm" onclick="openScheda('+l.id+')">Vedi</button>' +
@@ -1261,7 +1273,7 @@ async function renderAdminTable() {
           '<button class="btn-sm danger" onclick="deleteLemma('+l.id+')">Elimina</button>' +
         '</div></td></tr>';
     }).join('');
-  } catch(err){document.getElementById('admin-lemmi-tbody').innerHTML='<tr><td colspan="6" style="text-align:center">Errore caricamento</td></tr>';}
+  } catch(err){document.getElementById('admin-lemmi-tbody').innerHTML='<tr><td colspan="7" style="text-align:center">Errore caricamento</td></tr>';}
 }
 
 async function deleteLemma(id) {
@@ -1311,6 +1323,38 @@ async function renderAdminUsers() {
   } catch(err){}
 }
 
+// Gestione media amministrazione: si associano file già ospitati a un URL HTTPS.
+function adminMediaFields(prefix, existing) {
+  var esc=escapeScheda;
+  var html='<h3>Contenuti multimediali</h3><p class="admin-media-note">Incolla il collegamento HTTPS diretto al file audio, foto o video. I file devono essere già ospitati online; non si tratta di un caricamento dal computer.</p>';
+  if(Array.isArray(existing)&&existing.length){
+    html+='<p class="form-label">Media già associati</p>';
+    existing.forEach(function(m){
+      var type=String(m.type||'').toLowerCase(), url=safeMediaUrl(m.url);
+      if(!['audio','photo','video'].includes(type))return;
+      html+='<div class="admin-media-existing"><span class="lex-badge '+type+'">'+({audio:'Audio',photo:'Foto',video:'Video'}[type])+'</span> '+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(m.caption||m.url)+'</a>':esc(m.caption||m.url));
+      if(Number.isInteger(m.id))html+='<label><input type="checkbox" data-media-remove="'+m.id+'"> Rimuovi associazione</label>';
+      html+='</div>';
+    });
+    html+='<p class="admin-media-note">I media esistenti vengono conservati, salvo rimozione esplicita.</p>';
+  }
+  [['audio','♫ Audio / pronuncia','MP3, WAV, OGG'],['photo','▣ Foto','JPG, PNG, WebP'],['video','▶ Video','MP4, WebM']].forEach(function(t){
+    html+='<div class="form-group"><label class="lex-badge '+t[0]+'" for="'+prefix+'-media-'+t[0]+'">'+t[1]+'</label><div class="admin-media-row"><input class="form-input" type="url" id="'+prefix+'-media-'+t[0]+'" placeholder="URL HTTPS diretto ('+t[2]+')" aria-label="URL '+t[0]+'"><input class="form-input" id="'+prefix+'-caption-'+t[0]+'" placeholder="Didascalia / fonte (facoltativa)" aria-label="Didascalia '+t[0]+'"></div></div>';
+  });
+  return html;
+}
+function collectAdminMedia(prefix){
+  var result=[];
+  ['audio','photo','video'].forEach(function(type){
+    var url=document.getElementById(prefix+'-media-'+type).value.trim();
+    if(!url)return;
+    var parsed;try{parsed=new URL(url);}catch(e){}
+    if(!parsed||parsed.protocol!=='https:'||parsed.username||parsed.password||url.length>2048)throw new Error('Inserisci un URL HTTPS diretto valido per '+type);
+    result.push({type:type.toUpperCase(),url:url,caption:document.getElementById(prefix+'-caption-'+type).value.trim()});
+  });
+  return result;
+}
+
 async function saveNewLemma() {
   var w=document.getElementById('admin-word').value.trim();
   var it=document.getElementById('admin-it').value.trim();
@@ -1338,6 +1382,7 @@ async function saveNewLemma() {
     });
   }
 
+  var mediaAdd; try{mediaAdd=collectAdminMedia('admin');}catch(e){showToast(e.message,'error');return;}
   var createReverse = document.getElementById('admin-create-reverse').checked;
   var reverseDir = dir === 'GR_IT' ? 'IT_GR' : 'GR_IT';
   if(createReverse) {
@@ -1374,6 +1419,7 @@ async function saveNewLemma() {
     }
     await apiFetch('/admin/lemmas',{method:'POST',body:JSON.stringify({
       word:w, translation:it, category:cat, direction:dir,
+      phonetic:document.getElementById('admin-phonetic').value.trim(), mediaAdd:mediaAdd,
       grammaticalCategory: document.getElementById('admin-gramcat').value.trim(),
       grammaticalExceptions: document.getElementById('admin-gramex').value.trim(),
       variants: document.getElementById('admin-variants').value.trim(),
@@ -1398,6 +1444,8 @@ async function saveNewLemma() {
     } else {
       showToast('Lemma "'+w+'" salvato!','success');
     }
+    document.getElementById('admin-phonetic').value='';
+    document.getElementById('admin-media-fields').innerHTML=adminMediaFields('admin',[]);
     await renderAll();
     switchAdminTab('lemmi');
     renderAdminTable();
@@ -1417,18 +1465,21 @@ async function openEditModal(id) {
   var relText = (l.relatedLemmas||[]).map(function(r){return r.category+': '+r.term;}).join('\n');
 
   document.getElementById('modal-body').innerHTML =
-    '<h2 style="font-family:var(--font-display);font-size:24px;margin-bottom:20px">Modifica: '+l.word+'</h2>' +
+    '<h2 style="font-family:var(--font-display);font-size:24px;margin-bottom:20px">Modifica: '+escapeScheda(l.word)+'</h2>' +
     '<div class="form-row">' +
       '<div class="form-group"><label class="form-label">Direzione</label><select class="form-select" id="edit-direction"><option value="GR_IT"'+(l.direction==='GR_IT'?' selected':'')+'>GR - IT</option><option value="IT_GR"'+(l.direction==='IT_GR'?' selected':'')+'>IT - GR</option></select></div>' +
       '<div class="form-group"><label class="form-label">Categoria</label><select class="form-select" id="edit-category"><option value="NOUN"'+(String(l.category||'').toUpperCase()==='NOUN'?' selected':'')+'>Sostantivo</option><option value="VERB"'+(String(l.category||'').toUpperCase()==='VERB'?' selected':'')+'>Verbo</option><option value="ADJ"'+(String(l.category||'').toUpperCase()==='ADJ'?' selected':'')+'>Aggettivo</option><option value="ADV"'+(String(l.category||'').toUpperCase()==='ADV'?' selected':'')+'>Avverbio</option><option value="EXPR"'+(String(l.category||'').toUpperCase()==='EXPR'?' selected':'')+'>Espressione</option></select></div>' +
     '</div>' +
-    '<div class="form-row"><div class="form-group"><label class="form-label">Lemma</label><input class="form-input" id="edit-word" value="'+(l.word||'')+'"></div><div class="form-group"><label class="form-label">Varianti</label><input class="form-input" id="edit-variants" value="'+(l.variants||'')+'"></div></div>' +
-    '<div class="form-row"><div class="form-group"><label class="form-label">Cat. grammaticale</label><input class="form-input" id="edit-gramcat" value="'+(l.grammaticalCategory||'')+'"></div><div class="form-group"><label class="form-label">Eccezioni</label><input class="form-input" id="edit-gramex" value="'+(l.grammaticalExceptions||'')+'"></div></div>' +
-    '<div class="form-group"><label class="form-label">Traduzione principale</label><input class="form-input" id="edit-translation" value="'+(l.translation||'')+'"></div>' +
-    '<div class="form-group"><label class="form-label">Traduzioni multiple (una per riga)</label><textarea class="form-textarea" id="edit-translations">'+transText+'</textarea></div>' +
-    '<div class="form-group"><label class="form-label">Vedi anche</label><input class="form-input" id="edit-seealso" value="'+(l.seeAlso||'')+'"></div>' +
-    '<div class="form-group"><label class="form-label">Lemmi correlati (categoria: termine)</label><textarea class="form-textarea" id="edit-related">'+relText+'</textarea></div>' +
-    '<div class="form-row"><div class="form-group"><label class="form-label">Area</label><input class="form-input" id="edit-area" value="'+(l.area||'')+'"></div><div class="form-group"><label class="form-label">Stato</label><select class="form-select" id="edit-status"><option value="DRAFT"'+(String(l.status||'').toUpperCase()==='DRAFT'?' selected':'')+'>Bozza</option><option value="REVIEW"'+(String(l.status||'').toUpperCase()==='REVIEW'?' selected':'')+'>In revisione</option><option value="PUBLISHED"'+(String(l.status).toUpperCase()==='PUBLISHED'?' selected':'')+'>Pubblicato</option></select></div></div>' +
+    '<div class="form-row"><div class="form-group"><label class="form-label">Lemma</label><input class="form-input" id="edit-word" value="'+escapeScheda(l.word||'')+'"></div><div class="form-group"><label class="form-label">Varianti</label><input class="form-input" id="edit-variants" value="'+escapeScheda(l.variants||'')+'"></div></div>' +
+    '<div class="form-row"><div class="form-group"><label class="form-label">Cat. grammaticale</label><input class="form-input" id="edit-gramcat" value="'+escapeScheda(l.grammaticalCategory||'')+'"></div><div class="form-group"><label class="form-label">Eccezioni</label><input class="form-input" id="edit-gramex" value="'+escapeScheda(l.grammaticalExceptions||'')+'"></div></div>' +
+    '<div class="form-group"><label class="form-label">Traduzione principale</label><input class="form-input" id="edit-translation" value="'+escapeScheda(l.translation||'')+'"></div>' +
+    '<div class="form-group"><label class="form-label">Traduzioni multiple (una per riga)</label><textarea class="form-textarea" id="edit-translations">'+escapeScheda(transText)+'</textarea></div>' +
+    '<div class="form-group"><label class="form-label">Vedi anche</label><input class="form-input" id="edit-seealso" value="'+escapeScheda(l.seeAlso||'')+'"></div>' +
+    '<div class="form-group"><label class="form-label">Lemmi correlati (categoria: termine)</label><textarea class="form-textarea" id="edit-related">'+escapeScheda(relText)+'</textarea></div>' +
+    '<div class="form-row"><div class="form-group"><label class="form-label">Area</label><input class="form-input" id="edit-area" value="'+escapeScheda(l.area||'')+'"></div><div class="form-group"><label class="form-label">Stato</label><select class="form-select" id="edit-status"><option value="DRAFT"'+(String(l.status||'').toUpperCase()==='DRAFT'?' selected':'')+'>Bozza</option><option value="REVIEW"'+(String(l.status||'').toUpperCase()==='REVIEW'?' selected':'')+'>In revisione</option><option value="PUBLISHED"'+(String(l.status).toUpperCase()==='PUBLISHED'?' selected':'')+'>Pubblicato</option></select></div></div>' +
+    '<div class="form-group"><label class="form-label" for="edit-phonetic">Pronuncia fonetica (IPA)</label><input class="form-input" id="edit-phonetic" value="'+escapeScheda(l.phonetic||'')+'"></div>' +
+    '<div class="form-group"><label class="form-label" for="edit-definition">Definizione estesa</label><textarea class="form-textarea" id="edit-definition">'+escapeScheda(l.definition||'')+'</textarea></div>' +
+    '<div class="admin-media-box" id="edit-media-fields">'+adminMediaFields('edit',l.media||[])+'</div>' +
     '<div class="modal-actions" style="display:flex;gap:10px;margin-top:20px"><button class="btn-primary" onclick="saveLemmaEdit('+id+')">Salva modifiche</button><button class="btn-secondary" onclick="closeModal()">Annulla</button></div>';
 
   document.getElementById('modal-overlay').classList.add('open');
@@ -1452,7 +1503,13 @@ async function saveLemmaEdit(id) {
     });
   }
   try {
+    var mediaAdd=collectAdminMedia('edit');
+    var mediaRemove=Array.from(document.querySelectorAll('#edit-media-fields [data-media-remove]:checked')).map(function(el){return Number(el.dataset.mediaRemove);});
+    if(mediaRemove.length&&!confirm('Rimuovere le associazioni multimediali selezionate?'))return;
     await apiFetch('/admin/lemmas/'+id,{method:'PUT',body:JSON.stringify({
+      phonetic:document.getElementById('edit-phonetic').value.trim(),
+      definition:document.getElementById('edit-definition').value.trim(),
+      mediaAdd:mediaAdd,mediaRemove:mediaRemove,
       word: document.getElementById('edit-word').value.trim(),
       variants: document.getElementById('edit-variants').value.trim(),
       grammaticalCategory: document.getElementById('edit-gramcat').value.trim(),
@@ -1660,6 +1717,7 @@ function showToast(msg,type){
 
 document.getElementById('page-scheda').addEventListener('click',function(e){if(e.target===this)closeScheda();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document.getElementById('modal-overlay').classList.contains('open'))closeModal();else closeScheda();}});
+document.getElementById('admin-media-fields').innerHTML=adminMediaFields('admin',[]);
 </script>
 </body>
 </html>
