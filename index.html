@@ -609,8 +609,9 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--ink
               <input type="file" id="import-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportFile(this)">
             </div>
           </div>
+          <label style="display:flex;align-items:flex-start;gap:10px;padding:14px;background:var(--cream2);border-radius:var(--radius);margin:16px 0;cursor:pointer"><input type="checkbox" id="import-create-reverse" checked style="margin-top:5px;accent-color:var(--gold)"><span><strong>Crea anche le voci inverse</strong><br><span style="font-size:13px;color:var(--ink3)">Le voci inverse semplici saranno create in bozza. I casi ambigui saranno segnalati; le voci esistenti non saranno sovrascritte.</span></span></label>
           <div id="import-preview" style="display:none">
-            <div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:var(--gold);margin:16px 0 8px;text-transform:uppercase">Anteprima file</div>
+            <div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:var(--gold);margin:16px 0 8px;text-transform:uppercase">File selezionato</div>
             <div id="import-preview-content" style="overflow-x:auto;margin-bottom:16px"></div>
             <div style="display:flex;gap:10px;align-items:center">
               <button class="btn-primary" onclick="startImport()" id="import-btn">Importa lemmi</button>
@@ -1322,7 +1323,7 @@ async function saveNewLemma() {
 // ════════════════════════════════════════
 async function openEditModal(id) {
   var l;
-  try { var data = await apiFetch('/admin/lemmas?limit=200'); l = (data.data||[]).find(function(x){return x.id===id;}); if(!l) throw new Error('non trovato'); }
+  try { l = await apiFetch('/admin/lemmas/'+id); if(!l) throw new Error('non trovato'); }
   catch(err){ showToast('Errore caricamento lemma','error'); return; }
   
   var transText = (l.translations||[]).map(function(t,i){return (i+1)+'. '+t.text;}).join('\n');
@@ -1489,9 +1490,9 @@ var importFile=null;
 
 function downloadTemplate(){
   var rows=[
-    ['Termine','Varianti','Pronuncia','Direzione','Cat.Grammaticale','Eccezioni','Traduzione','Traduzioni.Multiple','Vedi.Anche','Lemmi.Correlati','Definizione','Area','Esempio.GR','Esempio.IT','Stato'],
-    ['AGRAFO','agrathto, agrasto','/agrafo/','GR_IT','agg.','','non scritto','1. non scritto\n2. (di carta) bianco','','','','Bova','','','PUBLISHED'],
-    ['ACQUA','','/ˈakwa/','IT_GR','s.','','nerò','1. s.n. nerò\n2. acqua abbondante: s.n. pelago','','s.n.: nerò\ns.n.: nimma, plima','','','','','PUBLISHED'],
+    ['Termine','Varianti','Pronuncia','Direzione','Categoria','Cat.Grammaticale','Eccezioni','Traduzione','Traduzioni.Multiple','Vedi.Anche','Lemmi.Correlati','Definizione','Area','Esempio.GR','Esempio.IT','Stato'],
+    ['AGRAFO','agrathto, agrasto','/agrafo/','GR_IT','ADJ','agg.','','non scritto','1. non scritto\n2. (di carta) bianco','','','','Bova','','','PUBLISHED'],
+    ['ACQUA','','/ˈakwa/','IT_GR','NOUN','s.','','nerò','1. s.n. nerò\n2. acqua abbondante: s.n. pelago','','s.n.: nerò\ns.n.: nimma, plima','','','','','PUBLISHED'],
   ];
   var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
   var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
@@ -1503,43 +1504,41 @@ function downloadTemplate(){
 }
 
 function handleImportFile(input){
-  importFile=input.files[0];
+  importFile=input.files[0] || null;
+  document.getElementById('import-preview').style.display=importFile?'':'none';
+  document.getElementById('import-result').style.display='none';
   if(!importFile)return;
+  if(importFile.size>10*1024*1024){importFile=null;input.value='';document.getElementById('import-preview').style.display='none';showToast('Il file supera 10 MB','error');return;}
   document.getElementById('import-file-name').textContent=importFile.name+' ('+Math.round(importFile.size/1024)+' KB)';
-  var reader=new FileReader();
-  reader.onload=function(e){
-    try{
-      var lines=e.target.result.split('\n').slice(0,6);
-      var html='<table class="data-table" style="font-size:12px"><thead><tr>';
-      var headers=lines[0].split(',').map(function(h){return h.replace(/"/g,'').trim();});
-      headers.slice(0,6).forEach(function(h){html+='<th>'+h+'</th>';});
-      html+='</tr></thead><tbody>';
-      for(var i=1;i<Math.min(lines.length,5);i++){if(!lines[i].trim())continue;html+='<tr>';lines[i].split(',').slice(0,6).forEach(function(c){html+='<td>'+c.replace(/"/g,'').trim()+'</td>';});html+='</tr>';}
-      html+='</tbody></table>';
-      document.getElementById('import-preview-content').innerHTML=html;
-      document.getElementById('import-preview').style.display='';
-    }catch(e){showToast('Errore lettura file','error');}
-  };
-  reader.readAsText(importFile,'utf-8');
+  document.getElementById('import-preview-content').textContent='Il file sarà letto dal server. Controlla le colonne Termine, Traduzione, Direzione e Stato prima di procedere.';
 }
 
 async function startImport(){
   if(!importFile)return;
   var btn=document.getElementById('import-btn');
+  if(btn.disabled)return;
+  var reverse=document.getElementById('import-create-reverse').checked;
+  if(!confirm(reverse?'Importare il file e creare anche le voci inverse in bozza?':'Importare soltanto le voci presenti nel file?'))return;
   btn.textContent='Importazione...';btn.disabled=true;
   var formData=new FormData();
   formData.append('file',importFile);
+  formData.append('createReverse',String(reverse));
+  var result=document.getElementById('import-result');
+  result.style.display='';result.textContent='Importazione in corso…';
   try{
     var res=await fetch(API+'/admin/import',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:formData});
     var data=await res.json();
-    var result=document.getElementById('import-result');
-    result.style.display='';
-    if(data.success){
-      result.innerHTML='<div style="background:#e0f5e8;border-radius:var(--radius);padding:16px;border-left:4px solid var(--olive)"><div style="font-weight:600;color:#1a6b35;margin-bottom:8px">Importazione completata!</div><div style="font-size:14px;color:#1a6b35">Lemmi importati: <strong>'+data.created+'</strong></div>'+(data.conjCreated?'<div style="font-size:14px;color:#1a6b35;margin-top:4px">Coniugazioni: <strong>'+data.conjCreated+'</strong></div>':'')+(data.skipped?'<div style="font-size:14px;color:#7a6020;margin-top:4px">Saltati: <strong>'+data.skipped+'</strong></div>':'')+'</div>';
-      await renderAll();renderAdminTable();
-      showToast('Importati '+data.created+' lemmi!','success');
-    }else{result.innerHTML='<div style="background:#f5e0e0;border-radius:var(--radius);padding:16px;border-left:4px solid var(--terracotta)"><strong>Errore:</strong> '+(data.error||'Importazione fallita')+'</div>';}
-  }catch(err){showToast('Errore di connessione','error');}
+    if(!res.ok || !data.success)throw new Error(data.error||'Importazione fallita');
+    var lines=['Voci principali create: '+data.created,'Righe saltate: '+data.skipped];
+    if(typeof data.reverseCreated==='number'){
+      lines.push('Duplicati principali: '+data.duplicates,'Voci inverse create in bozza: '+data.reverseCreated,'Voci inverse già presenti: '+data.reverseExisting,'Voci inverse da creare manualmente: '+data.reverseReview);
+    }else if(reverse){lines.push('ATTENZIONE: il backend non conferma la creazione delle voci inverse.');}
+    result.innerHTML='<div style="background:var(--cream2);padding:16px;border-radius:var(--radius)"><strong>Importazione completata</strong><div style="white-space:pre-wrap;margin-top:8px">'+escapeScheda(lines.join('\n'))+'</div></div>';
+    var details=(data.errors||[]).concat(data.warnings||[]);
+    if(details.length){var report=document.createElement('details');var summary=document.createElement('summary');summary.textContent='Segnalazioni ('+details.length+')';report.appendChild(summary);var list=document.createElement('ul');list.style.paddingLeft='24px';details.forEach(function(message){var li=document.createElement('li');li.textContent=message;list.appendChild(li);});report.appendChild(list);result.appendChild(report);}
+    await renderAll();renderAdminPage();
+    showToast('Importazione completata','success');
+  }catch(err){result.textContent='Importazione non confermata: '+err.message;showToast('Controlla il risultato prima di riprovare','error');}
   finally{btn.textContent='Importa lemmi';btn.disabled=false;}
 }
 
