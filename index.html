@@ -584,7 +584,13 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--ink
               </select>
             </div>
           </div>
-          <button class="btn-primary" onclick="saveNewLemma()">Salva lemma</button>
+          <div class="form-group" style="background:var(--cream2);border:1px solid var(--cream3);border-radius:var(--radius);padding:14px 16px">
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:14px">
+              <input type="checkbox" id="admin-create-reverse" style="margin-top:5px;accent-color:var(--gold)">
+              <span><strong>Crea anche la voce inversa</strong><span style="display:block;color:var(--ink3);font-size:12px;margin-top:3px">Mostreremo un'anteprima prima del salvataggio. La voce inversa sarà creata in bozza, da controllare e pubblicare separatamente.</span></span>
+            </label>
+          </div>
+          <button class="btn-primary" id="admin-save-new-btn" onclick="saveNewLemma()">Salva lemma</button>
         </div>
       </div>
 
@@ -1244,10 +1250,40 @@ async function saveNewLemma() {
     });
   }
 
+  var createReverse = document.getElementById('admin-create-reverse').checked;
+  var reverseDir = dir === 'GR_IT' ? 'IT_GR' : 'GR_IT';
+  if(createReverse) {
+    if(w.toLocaleLowerCase('it') === it.toLocaleLowerCase('it')) {
+      showToast('Il lemma e la traduzione sono uguali: verifica prima la voce inversa','error'); return;
+    }
+    if(translations.length > 1 || relatedLemmas.length || document.getElementById('admin-seealso').value.trim()) {
+      showToast('Voce con più significati o rimandi: crea la voce inversa manualmente per evitare errori','error'); return;
+    }
+    var preview = 'VOCE PRINCIPALE\n' + w + ' → ' + it + ' (' + (dir === 'GR_IT' ? 'Grecanico → Italiano' : 'Italiano → Grecanico') + ')\n\n' +
+      'VOCE INVERSA (BOZZA)\n' + it + ' → ' + w + ' (' + (reverseDir === 'GR_IT' ? 'Grecanico → Italiano' : 'Italiano → Grecanico') + ')\n\n' +
+      'La voce inversa non copierà automaticamente definizione, esempi o pronuncia.\n\nConfermi la creazione delle due voci?';
+    if(!confirm(preview)) return;
+  }
+  var saveButton = document.getElementById('admin-save-new-btn');
+  if(saveButton.disabled) return;
+  saveButton.disabled = true;
+  saveButton.textContent = 'Salvataggio...';
   var exGr=document.getElementById('admin-ex-gr').value.trim();
   var exIt=document.getElementById('admin-ex-it').value.trim();
 
   try {
+    if(createReverse) {
+      // Controllo preventivo per evitare duplicati: se non riesce, non salva nulla.
+      var existingData = await apiFetch('/admin/lemmas?limit=200');
+      var existing = existingData.data || [];
+      var duplicates = existing.filter(function(l){
+        return (l.direction === dir && String(l.word||'').trim().toLocaleLowerCase('it') === w.toLocaleLowerCase('it')) ||
+          (l.direction === reverseDir && String(l.word||'').trim().toLocaleLowerCase('it') === it.toLocaleLowerCase('it'));
+      });
+      if(duplicates.length) {
+        showToast('Esiste già una delle due voci. Controlla in Admin → Lemmi prima di procedere.','error'); return;
+      }
+    }
     await apiFetch('/admin/lemmas',{method:'POST',body:JSON.stringify({
       word:w, translation:it, category:cat, direction:dir,
       grammaticalCategory: document.getElementById('admin-gramcat').value.trim(),
@@ -1261,11 +1297,24 @@ async function saveNewLemma() {
       relatedLemmas: relatedLemmas,
       examples: exGr ? [{textGr:exGr, textIt:exIt}] : [],
     })});
-    showToast('Lemma "'+w+'" salvato!','success');
+    if(createReverse) {
+      try {
+        await apiFetch('/admin/lemmas',{method:'POST',body:JSON.stringify({
+          word:it, translation:w, category:cat, direction:reverseDir,
+          status:'DRAFT'
+        })});
+        showToast('Voce principale salvata e voce inversa creata in bozza','success');
+      } catch(reverseError) {
+        showToast('Voce principale salvata, ma voce inversa NON creata: '+reverseError.message,'error');
+      }
+    } else {
+      showToast('Lemma "'+w+'" salvato!','success');
+    }
     await renderAll();
     switchAdminTab('lemmi');
     renderAdminTable();
   } catch(err){showToast('Errore: '+err.message,'error');}
+  finally { saveButton.disabled = false; saveButton.textContent = 'Salva lemma'; }
 }
 
 // ════════════════════════════════════════
