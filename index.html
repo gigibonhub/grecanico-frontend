@@ -1,1797 +1,638 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#1a1208">
-<meta name="description" content="Dizionario digitale del Grecanico calabrese">
-<title>Γκρεκάνικο · Dizionario Grecanico</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-:root {
-  --ink: #1a1208;
-  --ink2: #3d2e10;
-  --ink3: #7a6040;
-  --gold: #c8922a;
-  --gold2: #e8b84b;
-  --gold3: #f5d98a;
-  --cream: #faf6ed;
-  --cream2: #f0e8d5;
-  --cream3: #e4d5b7;
-  --terracotta: #c4512a;
-  --olive: #6b7c3a;
-  --blue-med: #2d5a8e;
-  --surface: #ffffff;
-  --border: rgba(26,18,8,0.12);
-  --border2: rgba(26,18,8,0.25);
-  --shadow: 0 2px 16px rgba(26,18,8,0.08);
-  --shadow-lg: 0 8px 40px rgba(26,18,8,0.14);
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 20px;
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-body: 'Outfit', system-ui, sans-serif;
-  --transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font-body); background: var(--cream); color: var(--ink); min-height: 100vh; overflow-x: hidden; font-size: 15px; line-height: 1.6; }
-.app { display: flex; flex-direction: column; min-height: 100vh; }
+const express = require('express');
+const { PrismaClient } = require('@prisma/client');
+const { requireAuth, requireRole } = require('../middleware/auth');
 
-/* TOPBAR */
-.topbar { position: sticky; top: 0; z-index: 100; background: var(--ink); color: var(--cream); display: flex; align-items: center; gap: 12px; padding: 0 20px; height: 60px; border-bottom: 2px solid var(--gold); }
-.topbar-logo { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--gold2); letter-spacing: 0.02em; cursor: pointer; white-space: nowrap; }
-.topbar-logo span { font-weight: 300; color: var(--cream3); font-size: 14px; margin-left: 8px; }
-.topbar-search { flex: 1; max-width: 480px; position: relative; }
-.topbar-search input { width: 100%; padding: 8px 16px 8px 40px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 24px; color: var(--cream); font-family: var(--font-body); font-size: 14px; outline: none; transition: var(--transition); }
-.topbar-search input::placeholder { color: rgba(255,255,255,0.4); }
-.topbar-search input:focus { background: rgba(255,255,255,0.15); border-color: var(--gold); }
-.topbar-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; opacity: 0.5; }
-.topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.btn-icon { background: none; border: none; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--cream2); transition: var(--transition); font-size: 16px; }
-.btn-icon:hover { background: rgba(255,255,255,0.1); color: var(--gold2); }
-.user-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--gold); color: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; cursor: pointer; border: 2px solid var(--gold2); transition: var(--transition); }
+const router = express.Router();
+const prisma = new PrismaClient();
 
-/* SWITCH LINGUA */
-.lang-switch { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); border-radius: 24px; padding: 4px; border: 1px solid rgba(255,255,255,0.2); }
-.lang-btn { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; border: none; cursor: pointer; transition: var(--transition); background: none; color: rgba(255,255,255,0.5); font-family: var(--font-body); }
-.lang-btn.active { background: var(--gold); color: var(--ink); }
+// Tutte le route admin richiedono autenticazione + ruolo EDITOR o ADMIN
+router.use(requireAuth);
+router.use(requireRole('EDITOR', 'ADMIN'));
 
-/* NAV TABS */
-.nav-tabs { background: var(--ink2); display: flex; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid rgba(200,146,42,0.3); }
-.nav-tabs::-webkit-scrollbar { display: none; }
-.nav-tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: rgba(240,232,213,0.6); cursor: pointer; border: none; background: none; white-space: nowrap; position: relative; transition: var(--transition); font-family: var(--font-body); letter-spacing: 0.04em; }
-.nav-tab:hover { color: var(--gold2); }
-.nav-tab.active { color: var(--gold2); }
-.nav-tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--gold2); }
+// ═══════════════════════════════════════════════════════
+//  LEMMI
+// ═══════════════════════════════════════════════════════
 
-/* MAIN */
-.main { flex: 1; }
-.page { display: none; }
-.page.active { display: block; }
-
-/* HERO */
-.hero { background: linear-gradient(135deg, var(--ink) 0%, var(--ink2) 60%, #3d2e10 100%); padding: 60px 24px 80px; text-align: center; position: relative; overflow: hidden; }
-.hero::before { content: 'Γ'; position: absolute; right: -20px; top: -40px; font-family: var(--font-display); font-size: 300px; color: rgba(200,146,42,0.05); line-height: 1; pointer-events: none; }
-.hero-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.25em; color: var(--gold); text-transform: uppercase; margin-bottom: 16px; }
-.hero-title { font-family: var(--font-display); font-size: clamp(36px, 6vw, 64px); font-weight: 300; color: var(--cream); line-height: 1.1; margin-bottom: 8px; }
-.hero-title strong { font-weight: 600; color: var(--gold2); }
-.hero-subtitle { font-size: 15px; color: var(--cream3); max-width: 520px; margin: 0 auto 36px; font-weight: 300; }
-.hero-search { max-width: 560px; margin: 0 auto; position: relative; }
-.hero-search input { width: 100%; padding: 16px 60px 16px 24px; border-radius: 50px; border: 2px solid var(--gold); background: rgba(255,255,255,0.08); color: var(--cream); font-size: 16px; font-family: var(--font-body); outline: none; transition: var(--transition); }
-.hero-search input::placeholder { color: rgba(240,232,213,0.4); }
-.hero-search input:focus { background: rgba(255,255,255,0.12); box-shadow: 0 0 0 4px rgba(200,146,42,0.2); }
-.hero-search-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: var(--gold); color: var(--ink); border: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: var(--transition); }
-.hero-search-btn:hover { background: var(--gold2); }
-.hero-stats { display: flex; justify-content: center; gap: 40px; margin-top: 40px; flex-wrap: wrap; }
-.hero-stat-n { font-family: var(--font-display); font-size: 32px; font-weight: 600; color: var(--gold2); line-height: 1; }
-.hero-stat-l { font-size: 12px; color: var(--cream3); margin-top: 4px; letter-spacing: 0.08em; }
-
-/* SECTION */
-.section { padding: 32px 24px; max-width: 1200px; margin: 0 auto; }
-.section-title { font-family: var(--font-display); font-size: 26px; font-weight: 600; color: var(--ink2); margin-bottom: 4px; }
-.section-sub { font-size: 13px; color: var(--ink3); margin-bottom: 24px; }
-
-/* ALPHA NAV */
-.alpha-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 28px; }
-.alpha-btn { width: 36px; height: 36px; border-radius: var(--radius-sm); border: 1px solid var(--border2); background: var(--surface); font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--ink2); cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; }
-.alpha-btn:hover, .alpha-btn.active { background: var(--ink); color: var(--gold2); border-color: var(--ink); }
-
-/* LEMMA GRID */
-.lemma-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-.lemma-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; cursor: pointer; transition: var(--transition); position: relative; overflow: hidden; }
-.lemma-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--gold); border-radius: 3px 0 0 3px; opacity: 0; transition: var(--transition); }
-.lemma-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-.lemma-card:hover::before { opacity: 1; }
-.lemma-card-word { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--ink); line-height: 1.2; }
-.lemma-card-variants { font-size: 13px; color: var(--ink3); font-style: italic; margin-top: 2px; }
-.lemma-card-cat { font-size: 12px; color: var(--ink3); font-style: italic; margin-top: 6px; }
-.lemma-card-trans { font-size: 13px; color: var(--ink2); margin-top: 8px; }
-.direction-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; margin-top: 8px; }
-.direction-badge.gr-it { background: #e8f0da; color: #4a5e20; border: 1px solid #c8d88a; }
-.direction-badge.it-gr { background: #dde8f5; color: #2a4a70; border: 1px solid #a8c5e8; }
-
-/* SCHEDA LEMMA */
-.scheda { max-width: 720px; margin: 0 auto; padding: 32px 24px; }
-.scheda-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 12px; }
-.scheda-actions { display: flex; gap: 8px; flex-shrink: 0; }
-.scheda-action-btn { background: none; border: 1px solid var(--border2); border-radius: var(--radius-sm); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition); color: var(--ink3); font-size: 16px; }
-.scheda-action-btn:hover { background: var(--cream2); color: var(--ink); }
-.scheda-action-btn.saved { color: var(--terracotta); border-color: var(--terracotta); background: #fdf0ec; }
-.scheda-word { font-family: var(--font-display); font-size: 36px; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.1; }
-.scheda-variants { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--ink2); margin-top: 4px; font-style: normal; }
-.scheda-cat { font-size: 14px; color: var(--ink3); font-style: italic; margin-top: 6px; }
-.scheda-spacer { height: 16px; }
-.scheda-translation { font-size: 15px; color: var(--ink); font-weight: 400; line-height: 1.6; }
-.scheda-translation-n { color: var(--ink3); margin-right: 4px; }
-.scheda-see-also { font-size: 15px; color: var(--ink); font-style: italic; }
-.scheda-see-also a { color: var(--gold); text-decoration: none; font-weight: 600; font-style: normal; cursor: pointer; border-bottom: 1px solid var(--gold3); transition: var(--transition); }
-.scheda-see-also a:hover { color: var(--terracotta); border-color: var(--terracotta); }
-.scheda-related { font-size: 15px; color: var(--ink); line-height: 1.8; }
-.scheda-related-cat { font-style: italic; color: var(--ink3); }
-.scheda-divider { height: 1px; background: var(--cream3); margin: 20px 0; }
-.scheda-back { display: inline-flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; color: var(--ink3); font-size: 14px; font-family: var(--font-body); padding: 8px 0; transition: var(--transition); margin-bottom: 20px; }
-.scheda-back:hover { color: var(--ink); }
-
-/* MODAL */
-.modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(26,18,8,0.7); backdrop-filter: blur(4px); display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-@media(min-width:640px) { .modal-overlay { align-items: center; justify-content: center; padding: 24px; } }
-.modal-overlay.open { opacity: 1; pointer-events: all; }
-.modal { background: var(--surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0; width: 100%; max-height: 90vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); padding: 28px 24px 40px; position: relative; }
-@media(min-width:640px) { .modal { border-radius: var(--radius-lg); max-width: 680px; transform: translateY(20px) scale(0.96); } }
-.modal-overlay.open .modal { transform: none; }
-.modal-close { position: absolute; top: 16px; right: 16px; background: var(--cream2); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--ink3); transition: var(--transition); }
-.modal-close:hover { background: var(--cream3); color: var(--ink); }
-
-/* BUTTONS */
-.btn-primary { background: var(--ink); color: var(--gold2); border: none; padding: 10px 20px; border-radius: 24px; cursor: pointer; font-family: var(--font-body); font-size: 14px; font-weight: 500; transition: var(--transition); display: inline-flex; align-items: center; gap: 8px; }
-.btn-primary:hover { background: var(--gold); color: var(--ink); }
-.btn-secondary { background: var(--cream2); color: var(--ink2); border: 1px solid var(--border2); padding: 10px 20px; border-radius: 24px; cursor: pointer; font-family: var(--font-body); font-size: 14px; font-weight: 500; transition: var(--transition); display: inline-flex; align-items: center; gap: 8px; }
-.btn-secondary:hover { background: var(--cream3); }
-.btn-sm { padding: 5px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border2); background: var(--surface); color: var(--ink); font-family: var(--font-body); transition: var(--transition); }
-.btn-sm:hover { background: var(--cream2); }
-.btn-sm.danger:hover { background: #f5e0e0; color: #8a2020; border-color: #d0a0a0; }
-.btn-sm.success:hover { background: #e0f5e8; color: #1a6b35; border-color: #a0d0a8; }
-
-/* FORMS */
-.form-group { margin-bottom: 18px; }
-.form-label { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: var(--ink3); margin-bottom: 6px; text-transform: uppercase; }
-.form-label span { color: var(--terracotta); }
-.form-input, .form-textarea, .form-select { width: 100%; padding: 10px 14px; border: 1px solid var(--border2); border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 14px; color: var(--ink); background: var(--surface); outline: none; transition: var(--transition); }
-.form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,146,42,0.15); }
-.form-textarea { resize: vertical; min-height: 100px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-@media(max-width:480px) { .form-row { grid-template-columns: 1fr; } }
-.upload-zone { border: 2px dashed var(--cream3); border-radius: var(--radius); padding: 24px; text-align: center; cursor: pointer; transition: var(--transition); color: var(--ink3); }
-.upload-zone:hover { border-color: var(--gold); background: rgba(200,146,42,0.04); }
-.form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; }
-
-/* USER AREA */
-.user-header { background: linear-gradient(135deg, #2d5a8e 0%, #1a3a5c 100%); padding: 36px 24px; color: white; }
-.user-greeting { font-family: var(--font-display); font-size: 28px; font-weight: 300; }
-.user-greeting strong { font-weight: 600; }
-.user-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-top: 20px; }
-.user-card { background: rgba(255,255,255,0.12); border-radius: var(--radius); padding: 16px; text-align: center; cursor: pointer; transition: var(--transition); border: 1px solid rgba(255,255,255,0.15); }
-.user-card:hover { background: rgba(255,255,255,0.2); }
-.user-card-n { font-size: 28px; font-weight: 600; font-family: var(--font-display); }
-.user-card-l { font-size: 12px; opacity: 0.75; margin-top: 4px; }
-.saved-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: var(--transition); }
-.saved-item:hover { padding-left: 8px; }
-.saved-word { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--ink); }
-.saved-it { font-size: 13px; color: var(--ink3); }
-.saved-date { font-size: 11px; color: var(--ink3); margin-left: auto; white-space: nowrap; }
-.saved-remove { background: none; border: none; cursor: pointer; color: var(--cream3); font-size: 14px; padding: 4px; transition: var(--transition); }
-.saved-remove:hover { color: var(--terracotta); }
-
-/* ADMIN */
-.admin-header { background: linear-gradient(135deg, #2a1808 0%, #3d2010 100%); padding: 28px 24px; }
-.admin-title { font-family: var(--font-display); font-size: 26px; color: var(--gold2); font-weight: 600; }
-.admin-sub { font-size: 13px; color: rgba(200,160,100,0.7); margin-top: 4px; }
-.admin-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; gap: 0; overflow-x: auto; }
-.admin-tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: var(--ink3); cursor: pointer; transition: var(--transition); background: none; border: none; border-bottom: 2px solid transparent; font-family: var(--font-body); white-space: nowrap; }
-.admin-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
-.data-table { width: 100%; border-collapse: collapse; }
-.data-table th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); border-bottom: 2px solid var(--cream3); background: var(--cream2); }
-.data-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--ink); vertical-align: middle; }
-.data-table tr:hover td { background: var(--cream2); }
-.data-table .word-cell { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
-.status-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-.status-badge.published { background: #e0f5e8; color: #1a6b35; }
-.status-badge.draft { background: #f5f0e0; color: #7a6020; }
-.status-badge.review { background: #e8e0f5; color: #50308a; }
-.status-badge.pending { background: #f5e0e0; color: #8a2020; }
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
-.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
-.stat-n { font-family: var(--font-display); font-size: 34px; font-weight: 600; color: var(--ink); line-height: 1; }
-.stat-label { font-size: 12px; color: var(--ink3); margin-top: 6px; font-weight: 500; }
-.action-btns { display: flex; gap: 6px; }
-
-/* LOGIN */
-.login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--ink); padding: 24px; }
-.login-box { background: var(--surface); border-radius: var(--radius-lg); padding: 36px 32px; max-width: 400px; width: 100%; box-shadow: var(--shadow-lg); }
-.login-logo { font-family: var(--font-display); font-size: 28px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
-.login-logo span { color: var(--gold); }
-.login-sub { font-size: 13px; color: var(--ink3); margin-bottom: 28px; }
-.login-tabs { display: flex; margin-bottom: 24px; border-bottom: 2px solid var(--cream3); }
-.login-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--ink3); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: var(--transition); }
-.login-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
-.demo-btns { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
-.demo-btn { flex: 1; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border2); background: var(--cream2); color: var(--ink2); font-size: 12px; cursor: pointer; font-family: var(--font-body); font-weight: 500; transition: var(--transition); }
-.demo-btn:hover { background: var(--cream3); }
-
-/* TOAST */
-.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 500; display: flex; flex-direction: column; gap: 8px; }
-.toast { background: var(--ink); color: var(--cream); padding: 12px 18px; border-radius: var(--radius); font-size: 14px; font-weight: 500; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px; transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); min-width: 240px; }
-.toast.show { transform: none; }
-.toast.success { border-left: 3px solid var(--olive); }
-.toast.error { border-left: 3px solid var(--terracotta); }
-.toast.info { border-left: 3px solid var(--blue-med); }
-
-/* FILTER CHIPS */
-.filter-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.filter-chip { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid var(--border2); background: var(--surface); color: var(--ink2); cursor: pointer; transition: var(--transition); }
-.filter-chip.active { background: var(--ink); color: var(--gold2); border-color: var(--ink); }
-
-/* EMPTY STATE */
-.empty-state { text-align: center; padding: 60px 24px; color: var(--ink3); }
-.empty-icon { font-size: 48px; margin-bottom: 16px; }
-.empty-title { font-family: var(--font-display); font-size: 22px; color: var(--ink2); margin-bottom: 8px; }
-.empty-text { font-size: 14px; max-width: 320px; margin: 0 auto; }
-
-/* SEARCH HEADER */
-.search-header { background: var(--cream2); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.search-query { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--ink); }
-.search-count { font-size: 13px; color: var(--ink3); }
-
-/* ANIMATIONS */
-@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
-.fade-in { animation: fadeIn 0.4s ease forwards; }
-
-/* RESPONSIVE */
-@media(max-width: 768px) {
-  .hero { padding: 40px 20px 60px; }
-  .section { padding: 24px 16px; }
-  .topbar-search { display: none; }
-  .lemma-grid { grid-template-columns: 1fr; }
-  .stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .scheda { padding: 20px 16px; }
-}
-
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--cream2); }
-::-webkit-scrollbar-thumb { background: var(--cream3); border-radius: 6px; }
-
-/* SCHEDA VOCABOLO — presentazione editoriale */
-.scheda { max-width: 860px; padding-top: 28px; padding-bottom: 64px; }
-.scheda-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: clamp(22px, 5vw, 42px); box-shadow: var(--shadow); }
-.scheda-eyebrow { color: var(--gold); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 12px; }
-.scheda-word { font-size: clamp(36px, 7vw, 56px); text-transform: none; overflow-wrap: anywhere; }
-.scheda-phonetic { color: var(--ink3); font-size: 17px; margin-top: 7px; }
-.scheda-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 4px; }
-.scheda-meta span { background: var(--cream); border: 1px solid var(--cream3); color: var(--ink2); border-radius: 20px; padding: 4px 11px; font-size: 12px; }
-.scheda-section { padding-top: 23px; margin-top: 23px; border-top: 1px solid var(--cream3); }
-.scheda-section-title { color: var(--ink3); text-transform: uppercase; letter-spacing: .12em; font-weight: 600; font-size: 11px; margin-bottom: 12px; }
-.scheda-main-translation { font-family: var(--font-display); font-size: 29px; font-weight: 600; color: var(--ink2); line-height: 1.25; }
-.scheda-translation { margin: 7px 0; }
-.scheda-definition { line-height: 1.85; white-space: pre-line; }
-.scheda-example { background: var(--cream); border-left: 3px solid var(--gold); padding: 15px 18px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
-.scheda-example-gr { font-family: var(--font-display); font-size: 23px; font-weight: 600; }
-.scheda-example-it { color: var(--ink3); font-style: italic; margin-top: 4px; }
-.scheda-tags { display: flex; flex-wrap: wrap; gap: 7px; }
-.scheda-tags span { border: 1px solid var(--cream3); padding: 3px 10px; border-radius: 16px; font-size: 12px; color: var(--ink3); }
-.scheda-controls { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
-.scheda-back { margin-bottom: 15px; }
-@media(max-width: 640px) { .scheda-panel { padding: 20px; } .scheda-actions { gap: 5px; } .scheda-action-btn { width: 34px; height: 34px; } }
-@media print { .topbar,.nav-tabs,.scheda-back,.scheda-actions,.scheda-controls { display:none!important; } .scheda-panel { box-shadow:none; border:0; } }
-
-/* Grafica del dizionario: oro, crema e schede lessicali */
-.hero-subtitle { max-width: 560px; }
-.lemma-card { padding: 20px 22px; min-height: 150px; }
-.lemma-card-word { font-size: 24px; }
-.lemma-card-phonetic { font-size: 13px; font-style: italic; color: var(--ink3); margin-top: 3px; }
-.lemma-card-trans { color: #a63d1d; font-weight: 500; margin-top: 10px; }
-.lex-badges { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; align-items:center; }
-.lex-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:11px; line-height:1.4; font-weight:500; background:#f0e8d5; border:1px solid #e4d5b7; color:#624925; }
-.lex-badge.noun { background:#e4edf9; border-color:#b4ccef; color:#294e80; }
-.lex-badge.verb { background:#e8efdc; border-color:#c5d5a8; color:#455a27; }
-.lex-badge.adj { background:#f8e6d9; border-color:#e9bf9f; color:#884522; }
-.lex-badge.audio { background:#f0e6fc; border-color:#d6b8f5; color:#654199; }
-.lex-badge.photo { background:#e3f4e3; border-color:#b7dfb3; color:#2f6637; }
-.lex-badge.video { background:#fce8de; border-color:#f0c0a9; color:#944124; }
-.lex-badge[href],button.lex-badge { cursor:pointer; font-family:inherit; text-decoration:none; }
-.lex-badge[href]:hover,button.lex-badge:hover { filter:brightness(.95); }
-.alpha-btn:first-child { width:auto; min-width:36px; padding:0 7px; }
-#page-scheda.active { position:fixed; inset:0; z-index:180; background:rgba(26,18,8,.68); display:flex; align-items:center; justify-content:center; padding:18px; overflow:auto; overscroll-behavior:contain; }
-#page-scheda .scheda { width:min(100%,660px); max-height:calc(100dvh - 36px); padding:0; margin:auto; overflow:auto; border-radius:18px; box-shadow:var(--shadow-lg); background:white; }
-#page-scheda .scheda-panel { padding:24px 26px; border:0; box-shadow:none; border-radius:18px; }
-.scheda-header { margin-bottom:8px; align-items:flex-start; }
-.scheda-word { font-size:clamp(34px,6vw,43px); font-weight:600; }
-.scheda-phonetic { font-size:14px; font-style:italic; }
-.scheda-eyebrow { font-size:10px; margin-bottom:6px; }
-.scheda-section { border:0; padding-top:0; margin-top:20px; }
-.scheda-section-title { color:#986b1e; padding-bottom:6px; border-bottom:1px solid var(--cream3); margin-bottom:10px; }
-.scheda-main-translation { font-family:var(--font-body); font-size:16px; font-weight:500; }
-.scheda-definition { font-size:14px; line-height:1.7; }
-.scheda-example { background:var(--cream2); border-left:2px solid var(--gold); padding:10px 14px; }
-.scheda-example-gr { font-size:19px; font-weight:400; font-style:italic; }
-.scheda-example-it { font-size:13px; font-style:normal; }
-.scheda-tags span { background:var(--cream2); }
-.scheda-controls { margin-top:16px; }
-.scheda-controls .saved { color:var(--gold2); }
-.scheda-media-player { margin-top:10px; }
-.scheda-media-player audio,.scheda-media-player video { width:100%; max-height:300px; }
-.scheda-media-player img { max-width:100%; max-height:300px; object-fit:contain; border-radius:8px; }
-@media(max-width:640px) { #page-scheda.active { padding:10px; } #page-scheda .scheda { max-height:calc(100dvh - 20px); } #page-scheda .scheda-panel { padding:20px; } .hero-stats { gap:22px; } }
-@media print { body:has(#page-scheda.active) .page:not(#page-scheda) { display:none!important; } #page-scheda.active { position:static; background:white; display:block; padding:0; } #page-scheda .scheda { max-height:none; overflow:visible; box-shadow:none; } .scheda-close-btn { display:none; } }
-
-
-/* === Raffinamento grafica classica richiesto === */
-.hero{background:linear-gradient(90deg,#1b1105 0%, #3a2505 48%, #5a3d08 100%);padding:56px 24px 72px;}
-.hero::before{font-size:260px;right:-6px;top:-12px;color:rgba(232,184,75,.06)}
-.hero-title{font-size:clamp(42px,6vw,62px);}
-.hero-subtitle{color:#f0ddae;max-width:620px;line-height:1.45}
-.hero-search input{background:rgba(255,255,255,.09);border-color:#cf9b2d}
-.hero-search-btn{background:#d39c29;color:#2a1804}
-.section{padding-top:18px}
-.section-title{font-size:23px;font-weight:500}
-.alpha-btn{width:32px;height:32px;border-radius:7px;border-color:#c6beb1;font-size:14px;background:#fbfaf7}
-.alpha-btn:hover,.alpha-btn.active{background:#231505;color:#e2b14a;border-color:#231505}
-.filters-row .filter-chip,.cat-chip,.media-chip{}
-.lemma-grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
-.lemma-card{background:#fcfbf8;border:1px solid #d8d3ca;border-radius:16px;padding:14px 14px 12px;min-height:118px;box-shadow:none}
-.lemma-card::before{display:none}
-.lemma-card:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(26,18,8,.08)}
-.lemma-card-word{font-size:18px;font-weight:600;color:#34200a;line-height:1.05}
-.lemma-card-phonetic{font-size:11px;font-style:italic;color:#7b6a53;margin-top:4px}
-.lemma-card-variants{font-size:11px;color:#8c7454;margin-top:3px}
-.lemma-card-trans{font-size:12px;color:#be4a24;font-weight:500;line-height:1.4;margin-top:9px;min-height:17px}
-.lex-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
-.lex-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;border:1px solid #d8d3ca;font-size:10px;font-weight:500;line-height:1.2;white-space:nowrap;cursor:pointer}
-.lex-badge.audio{background:#efe6fb;border-color:#d1bff1;color:#7b57a3}
-.lex-badge.photo{background:#e6f7e4;border-color:#b7ddb1;color:#376a3d}
-.lex-badge.video{background:#fde8df;border-color:#f0bfa7;color:#b55d33}
-.lex-badge.expr,.lex-badge.expression{background:#eee0ba;border-color:#dcc796;color:#816028}
-.lex-badge.noun,.lex-badge.sostantivo{background:#dce9fb;border-color:#a8c4e7;color:#466e96}
-.lex-badge.verb,.lex-badge.verbo{background:#d9e4ae;border-color:#afc26c;color:#6d7c2d}
-.lex-badge.adj,.lex-badge.aggettivo{background:#f4ead0;border-color:#ddc996;color:#8a6d2c}
-.direction-badge{background:#edf1d3;color:#566f28;border-color:#c8d88a;font-size:9px;padding:2px 8px;margin-top:7px}
-.direction-badge.it-gr{background:#dde8f5;color:#2a4a70;border-color:#a8c5e8}
-#page-scheda.active{background:rgba(41,27,10,.62);backdrop-filter:blur(2px)}
-#page-scheda .scheda{width:min(100%,800px);max-height:calc(100dvh - 38px);border-radius:20px;background:#fcfbf8}
-#page-scheda .scheda-panel{padding:26px 30px 20px;border-radius:20px;background:#fcfbf8}
-.scheda-header{margin-bottom:6px}
-.scheda-word{font-size:clamp(34px,5vw,52px);font-weight:600;color:#221305}
-.scheda-phonetic{font-size:14px;font-style:italic;color:#7b684f;margin-top:6px}
-.scheda-section-title{color:#b27b1d;border-bottom:1px solid #d9cfbe;padding-bottom:7px;margin-bottom:11px;font-size:11px;letter-spacing:.14em}
-.scheda-main-translation{font-family:var(--font-body);font-size:16px;font-weight:500;color:#2f1c09}
-.scheda-definition{font-size:14px;line-height:1.7;color:#3c2d1b}
-.scheda-example{background:#efe7d2;border-left:2px solid #d1a237;border-radius:0 10px 10px 0;padding:12px 16px}
-.scheda-example-gr{font-family:var(--font-display);font-size:26px;font-style:italic;font-weight:400;color:#6e5630}
-.scheda-example-it{font-size:13px;color:#5a4632;font-style:normal;margin-top:6px}
-.scheda-meta span{background:#f4efe2;border:1px solid #ddcfb7;color:#6c5537}
-.scheda-controls{gap:10px;margin-top:14px}
-.btn-primary,.scheda-controls .btn-primary{display:inline-flex;align-items:center;gap:8px;background:#231505;color:#eab449;border:0;border-radius:999px;padding:10px 18px;font-weight:600;cursor:pointer}
-.btn-primary:hover,.scheda-controls .btn-primary:hover{background:#34200a}
-.btn-secondary,.scheda-controls .btn-secondary{display:inline-flex;align-items:center;gap:8px;background:#efe7d2;color:#5a4632;border:1px solid #d1c3a8;border-radius:999px;padding:10px 16px;font-weight:500;cursor:pointer}
-.scheda-tags span{background:#f4efe2;border:1px solid #d8cbb2;color:#876741}
-.scheda-media-player{margin-top:12px;padding-top:2px}
-.scheda-media-player audio,.scheda-media-player video{width:100%;background:#f7f2e6;border-radius:12px}
-.scheda-media-player img{max-width:100%;border-radius:12px;border:1px solid #ddd2c2;background:white}
-@media (max-width: 720px){
-  .lemma-grid{grid-template-columns:1fr 1fr}
-}
-@media (max-width: 560px){
-  .lemma-grid{grid-template-columns:1fr}
-  #page-scheda .scheda-panel{padding:20px 16px 18px}
-  .scheda-word{font-size:31px}
-}
-
-
-.admin-media-box{background:#fbf8f1;border:1px solid var(--cream3);border-radius:14px;padding:18px;margin:18px 0}
-.admin-media-box h3{font-family:var(--font-display);font-size:23px;margin-bottom:4px;color:var(--ink2)}
-.admin-media-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 14px}
-.admin-media-note{font-size:12px;color:var(--ink3);margin-bottom:12px}
-.admin-media-existing{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--cream3);padding:8px 0;font-size:12px;overflow-wrap:anywhere}
-.admin-media-existing a{color:var(--ink2);max-width:100%;overflow-wrap:anywhere}
-@media(max-width:580px){.admin-media-row{grid-template-columns:1fr}}
-
-</style>
-</head>
-<body>
-
-<!-- LOGIN -->
-<div id="login-page" class="login-page">
-  <div class="login-box">
-    <div class="login-logo">Γκρεκάνικο <span>·</span></div>
-    <div class="login-sub">Dizionario digitale del Grecanico calabrese</div>
-    <div class="login-tabs">
-      <div class="login-tab active" onclick="switchLoginTab('login')">Accedi</div>
-      <div class="login-tab" onclick="switchLoginTab('register')">Registrati</div>
-    </div>
-    <div id="login-form">
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input class="form-input" type="email" placeholder="mario@esempio.it" id="login-email">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input class="form-input" type="password" placeholder="••••••••" id="login-pw">
-      </div>
-      <button class="btn-primary" style="width:100%;justify-content:center;padding:13px 20px;border-radius:var(--radius);font-size:15px" onclick="doLogin()">Accedi</button>
-      <div class="demo-btns">
-        <button class="demo-btn" onclick="loginAs('user')">Demo Utente</button>
-        <button class="demo-btn" onclick="loginAs('admin')">Demo Admin</button>
-        <button class="demo-btn" onclick="loginAs('guest')">Ospite</button>
-      </div>
-    </div>
-    <div id="register-form" style="display:none">
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Nome</label><input class="form-input" type="text" placeholder="Mario"></div>
-        <div class="form-group"><label class="form-label">Cognome</label><input class="form-input" type="text" placeholder="Rossi"></div>
-      </div>
-      <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" placeholder="mario@esempio.it"></div>
-      <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" placeholder="Min. 8 caratteri"></div>
-      <button class="btn-primary" style="width:100%;justify-content:center;padding:13px 20px;border-radius:var(--radius);font-size:15px" onclick="doRegister()">Crea account</button>
-    </div>
-  </div>
-</div>
-
-<!-- APP -->
-<div class="app" id="app" style="display:none">
-
-  <!-- TOPBAR -->
-  <header class="topbar">
-    <div class="topbar-logo" onclick="goPage('home')">Γκρεκάνικο <span>Grecanico</span></div>
-    <div class="topbar-search">
-      <svg class="topbar-search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
-      <input type="text" placeholder="Cerca un termine..." id="topbar-search-input" onkeydown="if(event.key==='Enter')doTopSearch()">
-    </div>
-    <div class="topbar-actions">
-      <!-- SWITCH LINGUA -->
-      <div class="lang-switch">
-        <button class="lang-btn active" id="btn-gr-it" onclick="setDirection('GR_IT')">GR→IT</button>
-        <button class="lang-btn" id="btn-it-gr" onclick="setDirection('IT_GR')">IT→GR</button>
-      </div>
-      <button class="btn-icon" onclick="doTopSearch()">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
-      </button>
-      <div style="position:relative">
-        <button class="btn-icon" onclick="goPage('user')" id="user-btn" style="display:none">
-          <div class="user-avatar" id="topbar-avatar">MR</div>
-        </button>
-      </div>
-      <button class="btn-icon" onclick="goPage('admin')" id="admin-btn" style="display:none" title="Admin">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 1l1.5 3.5L13 5l-2.5 2.5.5 3.5L8 9.5 5 11l.5-3.5L3 5l3.5-.5z"/></svg>
-      </button>
-      <button class="btn-icon" onclick="doLogout()" title="Esci">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 12l4-4-4-4M14 8H6M8 4H3a1 1 0 00-1 1v6a1 1 0 001 1h5"/></svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- NAV -->
-  <nav class="nav-tabs" id="main-nav">
-    <button class="nav-tab active" data-page="home" onclick="goPage('home')">Dizionario</button>
-    <button class="nav-tab" data-page="search" onclick="goPage('search')">Ricerca</button>
-    <button class="nav-tab" data-page="user" onclick="goPage('user')" id="nav-user" style="display:none">Area Personale</button>
-    <button class="nav-tab" data-page="admin" onclick="goPage('admin')" id="nav-admin" style="display:none">Admin</button>
-  </nav>
-
-  <!-- PAGE: HOME -->
-  <div class="page active" id="page-home">
-    <div class="hero">
-      <div class="hero-eyebrow">Patrimonio Linguistico della Calabria</div>
-      <h1 class="hero-title"><strong>Γκρεκάνικο</strong><br>Dizionario Grecanico</h1>
-      <p class="hero-subtitle" id="hero-subtitle">Il dizionario digitale della lingua grecanica calabrese, con definizioni, esempi, audio e documenti multimediali.</p>
-      <div class="hero-search">
-        <input type="text" placeholder="Cerca un termine..." id="hero-search-input" onkeydown="if(event.key==='Enter')doHeroSearch()">
-        <button class="hero-search-btn" onclick="doHeroSearch()">→</button>
-      </div>
-      <div class="hero-stats">
-        <div class="hero-stat"><div class="hero-stat-n" id="stat-lemmi">—</div><div class="hero-stat-l">Lemmi</div></div>
-        <div class="hero-stat"><div class="hero-stat-n" id="stat-audio">—</div><div class="hero-stat-l">Lemmi con audio</div></div>
-        <div class="hero-stat"><div class="hero-stat-n" id="stat-video">—</div><div class="hero-stat-l">Lemmi con video</div></div>
-        <div class="hero-stat"><div class="hero-stat-n" id="stat-areas">—</div><div class="hero-stat-l">Località</div></div>
-      </div>
-    </div>
-    <div class="section">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
-        <div>
-          <div class="section-title">Sfoglia l’alfabeto</div><div id="dict-title" style="font-size:12px;color:var(--ink3)">Dizionario Grecanico → Italiano</div>
-          <div class="section-sub">Seleziona una lettera per navigare i termini</div>
-        </div>
-        <div class="filter-chips" id="cat-filters">
-          <div class="filter-chip active" onclick="filterCat('all',this)">Tutti</div>
-          <div class="filter-chip" onclick="filterCat('VERB',this)">Verbi</div>
-          <div class="filter-chip" onclick="filterCat('NOUN',this)">Sostantivi</div>
-          <div class="filter-chip" onclick="filterCat('ADJ',this)">Aggettivi</div>
-          <div class="filter-chip" onclick="filterCat('media',this)">Con media</div>
-        </div>
-      </div>
-      <div class="alpha-nav" id="alpha-nav"></div>
-      <div class="lemma-grid" id="lemma-grid"></div>
-    </div>
-  </div>
-
-  <!-- PAGE: SCHEDA -->
-  <div class="page" id="page-scheda" role="dialog" aria-modal="true" aria-label="Scheda vocabolo">
-    <div class="scheda" id="scheda-content"></div>
-  </div>
-
-  <!-- PAGE: SEARCH -->
-  <div class="page" id="page-search">
-    <div class="search-header">
-      <div>
-        <div class="search-query" id="search-query-label">Ricerca avanzata</div>
-        <div class="search-count" id="search-count-label">Inserisci un termine per cercare</div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input class="form-input" style="width:220px" type="text" placeholder="Termine..." id="adv-search-input" onkeydown="if(event.key==='Enter')doAdvSearch()">
-        <select class="form-select" style="width:140px" id="adv-cat-filter">
-          <option value="">Tutte le categorie</option>
-          <option value="NOUN">Sostantivi</option>
-          <option value="VERB">Verbi</option>
-          <option value="ADJ">Aggettivi</option>
-          <option value="ADV">Avverbi</option>
-          <option value="EXPR">Espressioni</option>
-        </select>
-        <button class="btn-primary" onclick="doAdvSearch()">Cerca</button>
-      </div>
-    </div>
-    <div class="section"><div class="lemma-grid" id="search-results-grid"></div></div>
-  </div>
-
-  <!-- PAGE: USER -->
-  <div class="page" id="page-user">
-    <div class="user-header">
-      <div class="user-greeting">Benvenuto, <strong id="user-name-display">Mario</strong></div>
-      <div class="user-meta" id="user-role-display">Utente registrato</div>
-      <div class="user-cards">
-        <div class="user-card" onclick="switchUserTab('saved')"><div class="user-card-n" id="saved-count-badge">0</div><div class="user-card-l">Parole salvate</div></div>
-        <div class="user-card" onclick="switchUserTab('proposals')"><div class="user-card-n">0</div><div class="user-card-l">Proposte inviate</div></div>
-        <div class="user-card" onclick="switchUserTab('history')"><div class="user-card-n">0</div><div class="user-card-l">Ricerche effettuate</div></div>
-      </div>
-    </div>
-    <div class="section">
-      <div class="admin-tabs">
-        <button class="admin-tab active" onclick="switchUserTab('saved')">Parole Salvate</button>
-        <button class="admin-tab" onclick="switchUserTab('proposals')">Proponi Termine</button>
-        <button class="admin-tab" onclick="switchUserTab('history')">Cronologia</button>
-      </div>
-      <div id="user-tab-saved"><div class="saved-list" id="saved-list-container"></div></div>
-      <div id="user-tab-proposals" style="display:none">
-        <div class="form-card">
-          <div class="section-title" style="margin-bottom:4px">Proponi un nuovo termine</div>
-          <p style="font-size:13px;color:var(--ink3);margin-bottom:20px">I termini proposti saranno revisionati dal team editoriale prima della pubblicazione.</p>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">Termine <span>*</span></label><input class="form-input" type="text" id="prop-word"></div>
-            <div class="form-group"><label class="form-label">Categoria <span>*</span></label>
-              <select class="form-select" id="prop-cat">
-                <option value="">Seleziona...</option>
-                <option value="NOUN">Sostantivo</option>
-                <option value="VERB">Verbo</option>
-                <option value="ADJ">Aggettivo</option>
-                <option value="ADV">Avverbio</option>
-                <option value="EXPR">Espressione</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group"><label class="form-label">Traduzione <span>*</span></label><input class="form-input" type="text" id="prop-it"></div>
-          <div class="form-group"><label class="form-label">Note aggiuntive</label><textarea class="form-textarea" placeholder="Contesto d'uso, varianti, fonti..."></textarea></div>
-          <button class="btn-primary" onclick="sendProposal()">Invia proposta</button>
-        </div>
-      </div>
-      <div id="user-tab-history" style="display:none"><div class="saved-list" id="history-list"></div></div>
-    </div>
-  </div>
-
-  <!-- PAGE: ADMIN -->
-  <div class="page" id="page-admin">
-    <div class="admin-header">
-      <div class="admin-title">Pannello Amministrazione</div>
-      <div class="admin-sub">Gestione lemmi, utenti e proposte</div>
-    </div>
-    <div class="section">
-      <div class="stat-grid">
-        <div class="stat-card"><div class="stat-n" id="admin-stat-lemmi">—</div><div class="stat-label">Lemmi pubblicati</div></div>
-        <div class="stat-card"><div class="stat-n" id="admin-stat-draft">—</div><div class="stat-label">In bozza</div></div>
-        <div class="stat-card"><div class="stat-n" id="admin-stat-prop">—</div><div class="stat-label">Proposte utenti</div></div>
-        <div class="stat-card"><div class="stat-n" id="admin-stat-users">—</div><div class="stat-label">Utenti registrati</div></div>
-      </div>
-      <div class="admin-tabs">
-        <button class="admin-tab active" onclick="switchAdminTab('lemmi')">Lemmi</button>
-        <button class="admin-tab" onclick="switchAdminTab('proposte')">Proposte</button>
-        <button class="admin-tab" onclick="switchAdminTab('utenti')">Utenti</button>
-        <button class="admin-tab" onclick="switchAdminTab('nuovo')">Nuovo Lemma</button>
-        <button class="admin-tab" onclick="switchAdminTab('import')">Importa Excel</button>
-      </div>
-
-      <!-- Lemmi -->
-      <div id="admin-tab-lemmi">
-        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-          <input class="form-input" style="flex:1;min-width:180px" type="text" placeholder="Filtra lemmi..." id="admin-filter-input" oninput="renderAdminTable()">
-          <select class="form-select" style="width:160px" id="admin-status-filter" onchange="renderAdminTable()">
-            <option value="">Tutti gli stati</option>
-            <option value="PUBLISHED">Pubblicati</option>
-            <option value="DRAFT">Bozze</option>
-            <option value="REVIEW">In revisione</option>
-          </select>
-          <select class="form-select" style="width:160px" id="admin-dir-filter" onchange="renderAdminTable()">
-            <option value="">Entrambe le direzioni</option>
-            <option value="GR_IT">Greco → Italiano</option>
-            <option value="IT_GR">Italiano → Greco</option>
-          </select>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="data-table">
-            <thead><tr><th>Termine</th><th>Direzione</th><th>Categoria</th><th>Traduzione</th><th>Media</th><th>Stato</th><th>Azioni</th></tr></thead>
-            <tbody id="admin-lemmi-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Proposte -->
-      <div id="admin-tab-proposte" style="display:none">
-        <table class="data-table">
-          <thead><tr><th>Termine</th><th>Proposto da</th><th>Data</th><th>Stato</th><th>Azioni</th></tr></thead>
-          <tbody id="admin-proposals-tbody"></tbody>
-        </table>
-      </div>
-
-      <!-- Utenti -->
-      <div id="admin-tab-utenti" style="display:none">
-        <div style="overflow-x:auto">
-          <table class="data-table">
-            <thead><tr><th>Nome</th><th>Email</th><th>Ruolo</th><th>Registrato</th><th>Salvate</th><th>Azioni</th></tr></thead>
-            <tbody id="admin-users-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Nuovo Lemma -->
-      <div id="admin-tab-nuovo" style="display:none">
-        <div class="form-card">
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">Direzione <span>*</span></label>
-              <select class="form-select" id="admin-direction">
-                <option value="GR_IT">Greco → Italiano</option>
-                <option value="IT_GR">Italiano → Greco</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">Categoria <span>*</span></label>
-              <select class="form-select" id="admin-cat">
-                <option value="">Seleziona...</option>
-                <option value="NOUN">Sostantivo</option>
-                <option value="VERB">Verbo</option>
-                <option value="ADJ">Aggettivo</option>
-                <option value="ADV">Avverbio</option>
-                <option value="EXPR">Espressione</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">Lemma <span>*</span></label><input class="form-input" type="text" id="admin-word" placeholder="es. AGRAFO"></div>
-            <div class="form-group"><label class="form-label">Varianti</label><input class="form-input" type="text" id="admin-variants" placeholder="es. agrathto, agrasto"></div>
-          </div>
-          <div class="form-group"><label class="form-label">Categoria grammaticale</label><input class="form-input" type="text" id="admin-gramcat" placeholder="es. agg., s.f., v.med., s.n."></div>
-          <div class="form-group"><label class="form-label">Eccezioni grammaticali</label><input class="form-input" type="text" id="admin-gramex" placeholder="es. pl. agrafì, irr."></div>
-          <div class="form-group"><label class="form-label">Traduzione principale <span>*</span></label><input class="form-input" type="text" id="admin-it" placeholder="Traduzione principale"></div>
-          <div class="form-group"><label class="form-label">Traduzioni multiple (una per riga, inizia con numero)</label><textarea class="form-textarea" id="admin-translations" placeholder="1. non scritto&#10;2. (di carta) bianco"></textarea></div>
-          <div class="form-group"><label class="form-label">Vedi anche (lemma correlato)</label><input class="form-input" type="text" id="admin-seealso" placeholder="es. agapi"></div>
-          <div class="form-group" id="admin-related-group">
-            <label class="form-label">Lemmi correlati IT→GR (categoria: termine, uno per riga)</label>
-            <textarea class="form-textarea" id="admin-related" placeholder="s.n.: nerò&#10;s.n.: nìmma, plìma&#10;s.f.: tholàda"></textarea>
-          </div>
-          <div class="form-group"><label class="form-label">Definizione estesa</label><textarea class="form-textarea" id="admin-def"></textarea></div>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">Esempio in Grecanico</label><input class="form-input" id="admin-ex-gr" type="text"></div>
-            <div class="form-group"><label class="form-label">Traduzione esempio</label><input class="form-input" id="admin-ex-it" type="text"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">Area geografica</label><input class="form-input" type="text" id="admin-area"></div>
-            <div class="form-group"><label class="form-label">Stato pubblicazione</label>
-              <select class="form-select" id="admin-status">
-                <option value="DRAFT">Bozza</option>
-                <option value="REVIEW">In revisione</option>
-                <option value="PUBLISHED">Pubblica</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group"><label class="form-label" for="admin-phonetic">Pronuncia fonetica (IPA)</label><input class="form-input" id="admin-phonetic" placeholder="es. /papˈpu/"></div>
-          <div class="admin-media-box" id="admin-media-fields"></div>
-          <div class="form-group" style="background:var(--cream2);border:1px solid var(--cream3);border-radius:var(--radius);padding:14px 16px">
-            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:14px">
-              <input type="checkbox" id="admin-create-reverse" style="margin-top:5px;accent-color:var(--gold)">
-              <span><strong>Crea anche la voce inversa</strong><span style="display:block;color:var(--ink3);font-size:12px;margin-top:3px">Mostreremo un'anteprima prima del salvataggio. La voce inversa sarà creata in bozza, da controllare e pubblicare separatamente.</span></span>
-            </label>
-          </div>
-          <button class="btn-primary" id="admin-save-new-btn" onclick="saveNewLemma()">Salva lemma</button>
-        </div>
-      </div>
-
-      <!-- Import -->
-      <div id="admin-tab-import" style="display:none">
-        <div class="form-card">
-          <div class="section-title" style="margin-bottom:4px">Importazione massiva da Excel</div>
-          <p style="font-size:13px;color:var(--ink3);margin-bottom:20px">Carica un file Excel o CSV con i lemmi da importare.</p>
-          <div style="margin-bottom:20px"><button class="btn-secondary" onclick="downloadTemplate()">Scarica template Excel</button></div>
-          <div class="form-group">
-            <label class="form-label" for="import-format">Formato del dizionario</label>
-            <select class="form-select" id="import-format" onchange="resetOriginalImport()">
-              <option value="standard">Modello Excel standard</option>
-              <option value="original">Dizionario originale Italiano → Grecanico (senza intestazioni)</option>
-            </select>
-            <p style="font-size:12px;color:var(--ink3);margin-top:5px">Il formato originale conserva le espressioni nelle coppie di colonne e crea le voci in bozza.</p>
-          </div>
-          <div class="form-group">
-            <label class="form-label">File Excel / CSV</label>
-            <div class="upload-zone" onclick="document.getElementById('import-file-input').click()">
-              <div style="font-size:28px;margin-bottom:8px">📊</div>
-              <div style="font-size:13px">Clicca per selezionare un file</div>
-              <div style="font-size:11px;margin-top:6px;color:var(--ink3)">.xlsx, .xls, .csv · max 10MB</div>
-              <input type="file" id="import-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportFile(this)">
-            </div>
-          </div>
-          <label style="display:flex;align-items:flex-start;gap:10px;padding:14px;background:var(--cream2);border-radius:var(--radius);margin:16px 0;cursor:pointer"><input type="checkbox" id="import-create-reverse" checked style="margin-top:5px;accent-color:var(--gold)"><span><strong>Crea anche le voci inverse</strong><br><span style="font-size:13px;color:var(--ink3)">Le voci inverse semplici saranno create in bozza. I casi ambigui saranno segnalati; le voci esistenti non saranno sovrascritte.</span></span></label>
-          <div id="import-preview" style="display:none">
-            <div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:var(--gold);margin:16px 0 8px;text-transform:uppercase">File selezionato</div>
-            <div id="import-preview-content" style="overflow-x:auto;margin-bottom:16px"></div>
-            <div style="display:flex;gap:10px;align-items:center">
-              <button class="btn-primary" onclick="startImport()" id="import-btn">Importa lemmi</button>
-              <button class="btn-primary" onclick="previewOriginalImport()" id="original-preview-btn" style="display:none">Analizza il file</button>
-              <span id="import-file-name" style="font-size:13px;color:var(--ink3)"></span>
-            </div>
-          </div>
-          <div id="original-controls" style="display:none;margin-top:16px">
-            <div class="form-group"><label class="form-label" for="original-sheet">Foglio Excel (da controllare separatamente)</label><select class="form-select" id="original-sheet" onchange="previewOriginalImport()"></select></div>
-            <div id="original-report" style="white-space:pre-wrap;background:var(--cream2);padding:16px;border-radius:var(--radius);margin-bottom:14px"></div>
-            <div id="original-samples" style="overflow-x:auto;margin-bottom:14px"></div>
-            <button class="btn-primary" id="original-pilot-btn" onclick="runOriginalImport(false)" disabled>Importa 10 righe di prova (bozza)</button>
-            <button class="btn-secondary" id="original-all-btn" onclick="runOriginalImport(true)" disabled>Importa le restanti righe a blocchi</button>
-            <button class="btn-secondary" id="original-stop-btn" onclick="originalStop=true" style="display:none">Ferma dopo il blocco corrente</button>
-            <p style="font-size:12px;color:var(--ink3);margin-top:8px">Controlla le voci di prova in Admin prima di procedere con il resto. Non chiudere la pagina durante un blocco. Le voci già presenti non vengono sovrascritte.</p>
-            <div id="original-progress" style="white-space:pre-wrap;margin-top:12px"></div>
-          </div>
-          <div id="import-result" style="display:none;margin-top:20px"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /app -->
-
-<!-- MODAL -->
-<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
-  <div class="modal" id="modal-content">
-    <button class="modal-close" onclick="closeModal()">x</button>
-    <div id="modal-body"></div>
-  </div>
-</div>
-
-<!-- TOAST -->
-<div class="toast-container" id="toast-container"></div>
-
-<script>
-// ════════════════════════════════════════
-//  CONFIG
-// ════════════════════════════════════════
-var API = 'https://grecanico-backend.onrender.com/api';
-
-// ════════════════════════════════════════
-//  STATE
-// ════════════════════════════════════════
-var currentUser = null;
-var TOKEN = null;
-var LEMMAS = [];
-var savedWords = [];
-var currentFilter = { cat:'all', letter:'' };
-var currentDirection = 'GR_IT';
-
-// ════════════════════════════════════════
-//  API CLIENT
-// ════════════════════════════════════════
-async function apiFetch(path, options) {
-  var opts = options || {};
-  var headers = { 'Content-Type': 'application/json' };
-  if(TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
-  opts.headers = headers;
+// GET /api/admin/lemmas
+router.get('/lemmas', async (req, res, next) => {
   try {
-    var res = await fetch(API + path, opts);
-    var data = await res.json();
-    if(!res.ok) throw new Error(data.error || 'Errore API');
-    return data;
-  } catch(err) {
-    console.error('API error:', path, err.message);
-    throw err;
+    const page   = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit  = Math.max(1, Math.min(100, parseInt(req.query.limit) || 30));
+    const skip   = (page - 1) * limit;
+    const status = req.query.status?.toUpperCase();
+    const q      = req.query.q || '';
+
+    const where = {
+      ...(status && { status }),
+      ...(['GR_IT','IT_GR'].includes(req.query.direction) && {direction:req.query.direction}),
+      ...(['NOUN','VERB','ADJ','ADV','EXPR'].includes(req.query.category) && {category:req.query.category}),
+      ...(q && {
+        OR: [
+          { word:        { contains: q, mode: 'insensitive' } },
+          { translation: { contains: q, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
+    const [lemmas, total] = await Promise.all([
+      prisma.lemma.findMany({
+        where, skip, take: limit,
+        orderBy: [{ updatedAt: 'desc' },{id:'desc'}],
+        include: {
+          tags:  { include: { tag: true } },
+          media: { select: { type: true } },
+          examples: { orderBy: { sortOrder: 'asc' } },
+          translations: { orderBy: { sortOrder: 'asc' } },
+          relatedLemmas: { orderBy: { sortOrder: 'asc' } },
+          _count: { select: { savedBy: true } },
+        },
+      }),
+      prisma.lemma.count({ where }),
+    ]);
+
+    res.json({ data: lemmas, meta: { total, page, limit } });
+  } catch (err) { next(err); }
+});
+
+
+// Operazioni massive: esclusivamente bozze, filtri applicati sul server.
+router.post('/bulk-lemmas', async (req,res,next)=>{
+ try {
+  const {action,scope,filters={},ids,preview,expectedCount,category,grammaticalCategory}=req.body||{};
+  if(!['publish','normalize','category'].includes(action)||!['selected','filtered'].includes(scope))return res.status(400).json({error:'Operazione non valida'});
+  if(action==='category'&&(!['NOUN','VERB','ADJ','ADV','EXPR'].includes(category)||typeof grammaticalCategory!=='string'||!grammaticalCategory.trim()||grammaticalCategory.length>150||grammaticalInfo(grammaticalCategory)?.code!==category))return res.status(400).json({error:'Categoria e sigla coerenti obbligatorie'});
+  const where={status:'DRAFT'};
+  if(scope==='selected'){
+   if(!Array.isArray(ids)||!ids.length||ids.length>100||ids.some(i=>!Number.isSafeInteger(i)||i<1))return res.status(400).json({error:'Seleziona fino a 100 bozze'});
+   where.id={in:[...new Set(ids)]};
+  }else{
+   if(filters.direction&&!['GR_IT','IT_GR'].includes(filters.direction))return res.status(400).json({error:'Direzione non valida'});
+   if(filters.category&&!['NOUN','VERB','ADJ','ADV','EXPR'].includes(filters.category))return res.status(400).json({error:'Categoria non valida'});
+   if(filters.direction)where.direction=filters.direction;
+   if(filters.category)where.category=filters.category;
+   const q=String(filters.q||'').trim().slice(0,200);
+   if(q)where.OR=[{word:{contains:q,mode:'insensitive'}},{translation:{contains:q,mode:'insensitive'}}];
   }
-}
-
-// ════════════════════════════════════════
-//  DIREZIONE (GR_IT / IT_GR)
-// ════════════════════════════════════════
-function setDirection(dir) {
-  currentDirection = dir;
-  document.getElementById('btn-gr-it').classList.toggle('active', dir === 'GR_IT');
-  document.getElementById('btn-it-gr').classList.toggle('active', dir === 'IT_GR');
-  var dictTitle = document.getElementById('dict-title');
-  var heroSub = document.getElementById('hero-subtitle');
-  var heroInput = document.getElementById('hero-search-input');
-  var topInput = document.getElementById('topbar-search-input');
-  if(dir === 'GR_IT') {
-    if(dictTitle) dictTitle.textContent = 'Dizionario Grecanico - Italiano';
-    if(heroSub) heroSub.textContent = 'Il dizionario digitale della lingua grecanica calabrese, con definizioni, esempi, audio e documenti multimediali.';
-    if(heroInput) heroInput.placeholder = 'Cerca in Grecanico...';
-    if(topInput) topInput.placeholder = 'Cerca in Grecanico...';
-  } else {
-    if(dictTitle) dictTitle.textContent = 'Dizionario Italiano - Grecanico';
-    if(heroSub) heroSub.textContent = 'Il dizionario digitale della lingua grecanica calabrese, con definizioni, esempi, audio e documenti multimediali.';
-    if(heroInput) heroInput.placeholder = 'Cerca in Italiano...';
-    if(topInput) topInput.placeholder = 'Cerca in Italiano...';
-  }
-  currentFilter.letter = '';
-  renderAll();
-}
-
-// ════════════════════════════════════════
-//  AUTH
-// ════════════════════════════════════════
-function switchLoginTab(t) {
-  document.querySelectorAll('.login-tab').forEach(function(el,i){ el.classList.toggle('active', (i===0) === (t==='login')); });
-  document.getElementById('login-form').style.display = t==='login' ? '' : 'none';
-  document.getElementById('register-form').style.display = t==='register' ? '' : 'none';
-}
-
-function loginAs(role) {
-  var creds = { user:{email:'mario@esempio.it',password:'user1234'}, admin:{email:'admin@grecanico.it',password:'admin1234'} };
-  if(role === 'guest') { currentUser = {name:'Ospite',role:'guest',initials:'OS'}; TOKEN = null; applyAuth(); return; }
-  document.getElementById('login-email').value = creds[role].email;
-  document.getElementById('login-pw').value = creds[role].password;
-  doLogin();
-}
-
-async function doLogin() {
-  var email = document.getElementById('login-email').value.trim();
-  var password = document.getElementById('login-pw').value.trim();
-  if(!email || !password) { showToast('Inserisci email e password','error'); return; }
-  showToast('Accesso in corso...','info');
-  try {
-    var data = await apiFetch('/auth/login', { method:'POST', body: JSON.stringify({email, password}) });
-    TOKEN = data.token;
-    currentUser = { name:data.user.name, role:data.user.role.toLowerCase(), initials:data.user.name.split(' ').map(function(n){return n[0];}).join('').toUpperCase().slice(0,2), id:data.user.id };
-    localStorage.setItem('token', TOKEN);
-    localStorage.setItem('user', JSON.stringify(currentUser));
-    applyAuth();
-  } catch(err) { showToast('Credenziali non valide','error'); }
-}
-
-async function doRegister() {
-  var name = document.querySelector('#register-form input[type=text]').value.trim();
-  var email = document.querySelector('#register-form input[type=email]').value.trim();
-  var password = document.querySelector('#register-form input[type=password]').value.trim();
-  if(!name||!email||!password){showToast('Compila tutti i campi','error');return;}
-  try {
-    var data = await apiFetch('/auth/register',{method:'POST',body:JSON.stringify({name,email,password})});
-    TOKEN = data.token;
-    currentUser = {name:data.user.name,role:data.user.role.toLowerCase(),initials:data.user.name.split(' ').map(function(n){return n[0];}).join('').toUpperCase().slice(0,2),id:data.user.id};
-    localStorage.setItem('token',TOKEN);
-    localStorage.setItem('user',JSON.stringify(currentUser));
-    applyAuth();
-  } catch(err){showToast(err.message||'Errore registrazione','error');}
-}
-
-function applyAuth() {
-  try {
-    document.getElementById('login-page').style.cssText = 'display:none';
-    document.getElementById('app').style.cssText = 'display:flex;flex-direction:column;min-height:100vh';
-    document.getElementById('topbar-avatar').textContent = currentUser.initials;
-    document.getElementById('user-name-display').textContent = currentUser.name;
-    document.getElementById('user-role-display').textContent = currentUser.role === 'admin' ? 'Amministratore della piattaforma' : 'Utente registrato';
-    if(currentUser.role !== 'guest') { document.getElementById('user-btn').style.display=''; document.getElementById('nav-user').style.display=''; }
-    if(currentUser.role === 'admin' || currentUser.role === 'editor') { document.getElementById('admin-btn').style.display=''; document.getElementById('nav-admin').style.display=''; }
-    renderAll();
-    var linkedId=new URLSearchParams(location.search).get('lemma');if(linkedId&&/^\d+$/.test(linkedId))openScheda(Number(linkedId));
-    if(currentUser.role !== 'guest') loadSavedWords();
-    showToast('Benvenuto, ' + currentUser.name + '!', 'success');
-  } catch(err) { alert('Errore: ' + err.message); }
-}
-
-function doLogout() {
-  currentUser = null; TOKEN = null;
-  localStorage.removeItem('token'); localStorage.removeItem('user');
-  document.getElementById('login-page').style.cssText = 'display:flex';
-  document.getElementById('app').style.cssText = 'display:none';
-}
-
-(function restoreSession() {
-  var t = localStorage.getItem('token');
-  var u = localStorage.getItem('user');
-  if(t && u) { try { TOKEN = t; currentUser = JSON.parse(u); applyAuth(); } catch(e) { localStorage.clear(); } }
-})();
-
-// ════════════════════════════════════════
-//  NAVIGATION
-// ════════════════════════════════════════
-function goPage(p) {
-  if(p!=='scheda'&&document.getElementById('page-scheda').classList.contains('active'))closeScheda();
-  document.querySelectorAll('.page').forEach(function(el){ el.classList.remove('active'); });
-  document.getElementById('page-'+p).classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(function(el){ el.classList.toggle('active', el.dataset.page===p); });
-  if(p==='user') renderUserPage();
-  if(p==='admin') renderAdminPage();
-  if(p==='search') { document.getElementById('search-results-grid').innerHTML = renderLemmaCards(LEMMAS); }
-  window.scrollTo(0,0);
-}
-
-// ════════════════════════════════════════
-//  RENDER
-// ════════════════════════════════════════
-async function renderAll() {
-  showLoading();
-  try {
-    var url = '/lemmas?limit=50';
-    if(currentFilter.letter) url += '&letter=' + currentFilter.letter;
-    if(currentFilter.cat && currentFilter.cat !== 'all' && currentFilter.cat !== 'media') url += '&category=' + currentFilter.cat;
-    var data = await apiFetch(url);
-    LEMMAS = (data.data || []).map(normalizeAPILemma).filter(function(l){ return l.direction === currentDirection; });
-    renderAlphabetNav();
-    renderLemmaGrid();
-    loadStats();
-  } catch(err) {
-    document.getElementById('lemma-grid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">x</div><div class="empty-title">Backend non raggiungibile</div><div class="empty-text">Verifica che il server Render sia attivo</div></div>';
-  }
-}
-
-function showLoading() {
-  document.getElementById('lemma-grid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-title">Caricamento...</div></div>';
-}
-
-async function loadStats() {
-  try {
-    var data = await apiFetch('/lemmas?limit=50');
-    var all = (data.data || []).map(normalizeAPILemma);
-    var total = data.meta && data.meta.total != null ? data.meta.total : all.length;
-    document.getElementById('stat-lemmi').textContent = total.toLocaleString('it-IT');
-    var complete = total === all.length;
-    document.getElementById('stat-audio').textContent = complete ? all.filter(function(l){return l.hasAudio;}).length : '—';
-    document.getElementById('stat-video').textContent = complete ? all.filter(function(l){return l.hasVideo;}).length : '—';
-    document.getElementById('stat-areas').textContent = complete ? new Set(all.map(function(l){return String(l.area||'').trim().toLocaleLowerCase('it-IT');}).filter(Boolean)).size : '—';
-  } catch(e) {}
-}
-
-async function loadSavedWords() {
-  try { var data = await apiFetch('/user/saved'); savedWords = data.map(function(s){return s.lemma.id;}); document.getElementById('saved-count-badge').textContent = savedWords.length; }
-  catch(e) { savedWords = []; }
-}
-
-function normalizeAPILemma(l) {
-  var ex = l.examples && l.examples[0];
-  return {
-    id: l.id, word: l.word, phonetic: l.phonetic||'',
-    cat: (l.category||'noun').toLowerCase(),
-    grammaticalCategory: l.grammaticalCategory||'',
-    grammaticalExceptions: l.grammaticalExceptions||'',
-    variants: l.variants||'',
-    seeAlso: l.seeAlso||'',
-    direction: l.direction||'GR_IT',
-    it: l.translation,
-    def: l.definition||'',
-    translations: l.translations||[],
-    relatedLemmas: l.relatedLemmas||[],
-    examples: Array.isArray(l.examples) ? l.examples : [],
-    exGr: ex ? ex.textGr : '',
-    exIt: ex ? ex.textIt : '',
-    tags: l.tags||[],
-    area: l.area||'',
-    hasAudio: l.hasAudio||false, hasPhoto: l.hasPhoto||false, hasVideo: l.hasVideo||false,
-    status: String(l.status||'').toUpperCase(),
-    media: l.media||{},
+  const run=async tx=>{
+   const rows=await tx.lemma.findMany({where,select:{id:true,category:true,grammaticalCategory:true}});
+   const unknown=rows.filter(l=>!grammaticalInfo(l.grammaticalCategory)).length;
+   const changes=action==='normalize'?rows.filter(l=>{const g=grammaticalInfo(l.grammaticalCategory);return g&&g.code!==l.category;}):rows;
+   if(preview===true)return {preview:true,count:rows.length,affected:changes.length,unknown};
+   if(!Number.isInteger(expectedCount)||expectedCount!==rows.length)return {conflict:true};
+   let updated=0;
+   const groups=new Map();
+   for(const l of changes){const code=action==='normalize'?grammaticalInfo(l.grammaticalCategory).code:action==='category'?category:'PUBLISHED';if(!groups.has(code))groups.set(code,[]);groups.get(code).push(l.id);}
+   for(const [code,list] of groups)for(let i=0;i<list.length;i+=500){const data=action==='publish'?{status:'PUBLISHED'}:action==='category'?{category:code,grammaticalCategory:grammaticalCategory.trim()}:{category:code};const r=await tx.lemma.updateMany({where:{id:{in:list.slice(i,i+500)},status:'DRAFT'},data});updated+=r.count;}
+   return {count:rows.length,updated,unknown};
   };
-}
+  const result=preview===true?await run(prisma):await prisma.$transaction(run,{timeout:60000,isolationLevel:'Serializable'});
+  if(result.conflict)return res.status(409).json({error:'Il numero di bozze è cambiato. Ripeti l’anteprima.'});
+  res.json(result);
+ }catch(err){next(err);}
+});
 
-function renderAlphabetNav() {
-  var letters = [];
-  LEMMAS.forEach(function(l){ var c = l.word[0].toUpperCase(); if(letters.indexOf(c)<0) letters.push(c); });
-  letters.sort();
-  var nav = document.getElementById('alpha-nav');
-  var html = '<button class="alpha-btn' + (!currentFilter.letter?' active':'') + '" onclick="filterLetter(this, \'\')">Tutti</button>';
-  letters.forEach(function(l){ html += '<button class="alpha-btn' + (currentFilter.letter===l?' active':'') + '" onclick="filterLetter(this, \'' + l + '\')">' + l + '</button>'; });
-  nav.innerHTML = html;
-}
+// Eliminazione massiva: solo ADMIN, anteprima obbligatoria e conferma del gruppo esatto.
+router.post('/bulk-delete-lemmas', requireRole('ADMIN'), async (req,res,next)=>{
+ try {
+  const {scope,filters,ids,preview,expectedCount,expectedDigest,confirmation}=req.body||{};
+  if(!['selected','filtered','all'].includes(scope)||typeof preview!=='boolean')return res.status(400).json({error:'Operazione non valida'});
+  const where={};
+  if(scope==='selected'){
+   if(!Array.isArray(ids)||!ids.length||ids.length>100||ids.some(i=>!Number.isSafeInteger(i)||i<1))return res.status(400).json({error:'Seleziona da 1 a 100 lemmi'});
+   where.id={in:[...new Set(ids)]};
+  }else if(scope==='filtered'){
+   if(!filters||typeof filters!=='object'||Array.isArray(filters)||Object.keys(filters).some(k=>!['status','direction','category','q'].includes(k)))return res.status(400).json({error:'Filtri non validi'});
+   const allowed={status:['DRAFT','PUBLISHED','REVIEW'],direction:['GR_IT','IT_GR'],category:['NOUN','VERB','ADJ','ADV','EXPR']};
+   for(const [key,values] of Object.entries(allowed)){
+    if(filters[key]!==undefined&&filters[key]!==''&&!values.includes(filters[key]))return res.status(400).json({error:'Filtro non valido: '+key});
+    if(filters[key])where[key]=filters[key];
+   }
+   if(filters.q!==undefined&&(typeof filters.q!=='string'||filters.q.length>200))return res.status(400).json({error:'Testo non valido'});
+   const q=(filters.q||'').trim();if(q)where.OR=[{word:{contains:q,mode:'insensitive'}},{translation:{contains:q,mode:'insensitive'}}];
+   if(!Object.keys(where).length)return res.status(400).json({error:'Imposta almeno un filtro oppure scegli esplicitamente Intero dizionario'});
+  }
+  const run=async tx=>{
+   const rows=await tx.lemma.findMany({where,select:{id:true,status:true,direction:true,updatedAt:true},orderBy:{id:'asc'}});
+   const digest=require('crypto').createHash('sha256').update(JSON.stringify([scope,where,rows])).digest('hex');
+   const byStatus={},byDirection={};for(const l of rows){byStatus[l.status]=(byStatus[l.status]||0)+1;byDirection[l.direction]=(byDirection[l.direction]||0)+1;}
+   if(preview)return {count:rows.length,digest,byStatus,byDirection};
+   if(!rows.length||expectedCount!==rows.length||expectedDigest!==digest)return {conflict:true};
+   if(confirmation!=='ELIMINA '+rows.length)return {invalidConfirmation:true};
+   // Cancellazione atomica: le relazioni con onDelete Cascade sono rimosse dal DB.
+   let deleted=0;
+   for(let i=0;i<rows.length;i+=500){const r=await tx.lemma.deleteMany({where:{id:{in:rows.slice(i,i+500).map(l=>l.id)}}});deleted+=r.count;}
+   if(deleted!==rows.length)throw new Error('Conteggio cancellazione non coerente');
+   return {deleted};
+  };
+  const result=preview?await run(prisma):await prisma.$transaction(run,{timeout:60000,isolationLevel:'Serializable'});
+  if(result.conflict)return res.status(409).json({error:'Il gruppo di lemmi è cambiato. Ripeti l’anteprima.'});
+  if(result.invalidConfirmation)return res.status(400).json({error:'Conferma testuale non corretta'});
+  res.json(result);
+ }catch(err){next(err);}
+});
 
-function filterLetter(btn, l) {
-  document.querySelectorAll('.alpha-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  currentFilter.letter = l;
-  renderLemmaGrid();
-}
+// GET /api/admin/lemmas/:id — anche bozze, solo editor/admin autenticati
+router.get('/lemmas/:id', async (req,res,next) => {
+  try {
+    const id = Number(req.params.id);
+    if(!Number.isInteger(id) || id<1) return res.status(400).json({error:'ID non valido'});
+    const lemma = await prisma.lemma.findUnique({where:{id},include:{
+      examples:{orderBy:{sortOrder:'asc'}},translations:{orderBy:{sortOrder:'asc'}},
+      relatedLemmas:{orderBy:{sortOrder:'asc'}},tags:{include:{tag:true}},media:true
+    }});
+    if(!lemma) return res.status(404).json({error:'Lemma non trovato'});
+    res.json(lemma);
+  } catch(err) { next(err); }
+});
 
-function filterCat(cat, btn) {
-  document.querySelectorAll('.filter-chip').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  currentFilter.cat = cat;
-  renderAll();
-}
-
-function renderLemmaGrid() {
-  var filtered = LEMMAS;
-  if(currentFilter.cat === 'media') filtered = filtered.filter(function(l){return l.hasAudio || l.hasPhoto || l.hasVideo;});
-  if(currentFilter.letter) filtered = filtered.filter(function(l){ return l.word[0].toUpperCase() === currentFilter.letter; });
-  var grid = document.getElementById('lemma-grid');
-  if(!filtered.length) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">-</div><div class="empty-title">Nessun termine trovato</div></div>'; return; }
-  grid.innerHTML = renderLemmaCards(filtered);
-}
-
-function mediaBadges(l) {
-  return (l.hasAudio?'<span class="lex-badge audio">♫ Audio</span>':'') + (l.hasPhoto?'<span class="lex-badge photo">▣ Foto</span>':'') + (l.hasVideo?'<span class="lex-badge video">▶ Video</span>':'');
-}
-function renderLemmaCards(list) {
-  return list.map(function(l) {
-    var esc = escapeScheda;
-    var id = Number(l.id);
-    if(!Number.isSafeInteger(id)) return '';
-    var preview = l.translations && l.translations.length ? l.translations[0].text : l.it;
-    var cat = ['noun','verb','adj','adv','expr'].includes(l.cat) ? l.cat : '';
-    return '<div class="lemma-card fade-in" role="button" tabindex="0" onclick="openScheda('+id+')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openScheda('+id+')}" aria-label="Apri '+esc(l.word)+'">' +
-      '<div class="lemma-card-word">'+esc(l.word)+'</div>' +
-      (l.phonetic?'<div class="lemma-card-phonetic">'+esc(l.phonetic)+'</div>':'') +
-      (l.variants?'<div class="lemma-card-variants">'+esc(l.variants)+'</div>':'') +
-      '<div class="lex-badges"><span class="lex-badge '+cat+'">'+esc(l.grammaticalCategory||catLabel(l.cat))+'</span></div>' +
-      '<div class="lemma-card-trans">'+esc(preview||'')+'</div>' +
-      (l.hasAudio||l.hasPhoto||l.hasVideo?'<div class="lex-badges">'+mediaBadges(l)+'</div>':'') + '</div>';
-  }).join('');
-}
-
-// ════════════════════════════════════════
-//  SCHEDA LEMMA
-// ════════════════════════════════════════
-function escapeScheda(value) {
-  return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+// Media associati: URL HTTPS diretti, nessun file sul disco temporaneo di Render.
+function parseNewMedia(value, userId) {
+  if(value === undefined) return [];
+  if(!Array.isArray(value) || value.length > 30) throw Object.assign(new Error('Massimo 30 nuovi media per salvataggio'),{status:400});
+  return value.map(item => {
+    const type = String(item?.type || '').toUpperCase();
+    const url = String(item?.url || '').trim();
+    let parsed;
+    try { parsed = new URL(url); } catch(e) {}
+    if(!['AUDIO','PHOTO','VIDEO'].includes(type) || !parsed || parsed.protocol !== 'https:' || parsed.username || parsed.password || url.length > 2048) {
+      throw Object.assign(new Error('Media non valido: inserire un URL HTTPS diretto'),{status:400});
+    }
+    return {type,url,caption:String(item.caption || '').trim().slice(0,500) || null,uploadedById:userId};
   });
 }
 
-function mediaEntries(l,kind) {
-  var m=l.media||{};
-  var items=Array.isArray(m)?m.filter(function(x){return x&&String(x.type).toLowerCase()===kind;}):m[kind];
-  if(!Array.isArray(items)) items=items?[items]:[];
-  if(!items.length && (m[kind+'Url']||m[kind+'_url'])) items=[{url:m[kind+'Url']||m[kind+'_url']}];
-  return items.map(function(x){return typeof x==='string'?{url:x}:x;}).filter(function(x){return x&&x.url;});
-}
-function safeMediaUrl(url) {
-  try { var u=new URL(url,API+'/'); return ['http:','https:'].includes(u.protocol)?u.href:''; } catch(e){return '';}
-}
-function closeScheda() {
-  var page=document.getElementById('page-scheda');
-  page.classList.remove('active');
-  document.getElementById('scheda-content').innerHTML='';
-  document.body.style.overflow='';
-  if(schedaFocus && schedaFocus.isConnected) schedaFocus.focus({preventScroll:true});
-}
-var schedaFocus;
-async function openScheda(id) {
-  var l = LEMMAS.find(function(x){return String(x.id)===String(id);});
-  try { var detail=await apiFetch('/lemmas/'+encodeURIComponent(id)); var raw=detail&&(detail.data&&!Array.isArray(detail.data)?detail.data:detail); if(raw&&raw.word)l=normalizeAPILemma(raw); } catch(e) {}
-  if(!l){showToast('Impossibile caricare il vocabolo','error');return;}
-  var esc=escapeScheda, isGreek=l.direction!=='IT_GR', isAuth=currentUser&&currentUser.role!=='guest';
-  var saved=savedWords.some(function(x){return String(x)===String(id);});
-  var cat=['noun','verb','adj','adv','expr'].includes(l.cat)?l.cat:'';
-  var meta=[l.phonetic,l.grammaticalCategory||catLabel(l.cat),l.grammaticalExceptions,l.area].filter(Boolean);
-  var html='<article class="scheda-panel"><div class="scheda-eyebrow">'+(isGreek?'Grecanico → Italiano':'Italiano → Grecanico')+'</div>';
-  html+='<div class="scheda-header"><h1 class="scheda-word">'+esc(l.word)+'</h1><div class="scheda-actions"><span class="lex-badge '+cat+'">'+esc(catLabel(l.cat))+'</span><button class="scheda-action-btn scheda-close-btn" id="scheda-close-btn" aria-label="Chiudi scheda">×</button></div></div>';
-  if(meta.length)html+='<div class="scheda-phonetic">'+esc(meta.join(' · '))+'</div>';
-  if(l.variants)html+='<div class="lemma-card-variants">Varianti: '+esc(l.variants)+'</div>';
-  if(l.hasAudio||mediaEntries(l,'audio').length)html+='<div class="scheda-controls" style="margin-top:10px"><button class="btn-primary" id="scheda-audio-btn">▶ Ascolta pronuncia</button></div>';
-  var translations=Array.isArray(l.translations)?l.translations:[];
-  var main=l.it||(translations[0]&&translations[0].text)||'';
-  if(main||translations.length){html+='<section class="scheda-section"><h2 class="scheda-section-title">'+(isGreek?'Traduzione italiana':'Traduzione grecanica')+'</h2><div class="scheda-main-translation">'+esc(main)+'</div>'; translations.filter(function(t){return t&&t.text&&String(t.text).trim()!==String(main).trim();}).forEach(function(t,i){html+='<div class="scheda-translation">'+(i+1)+'. '+esc(t.text)+'</div>';});html+='</section>';}
-  if(l.def)html+='<section class="scheda-section"><h2 class="scheda-section-title">Definizione</h2><p class="scheda-definition">'+esc(l.def)+'</p></section>';
-  var examples=l.examples.length?l.examples:(l.exGr||l.exIt?[{textGr:l.exGr,textIt:l.exIt}]:[]);
-  if(examples.length){html+='<section class="scheda-section"><h2 class="scheda-section-title">Esempi d’uso</h2>';examples.forEach(function(e){html+='<div class="scheda-example" style="margin-bottom:6px">'+(e.textGr?'<div class="scheda-example-gr">'+esc(e.textGr)+'</div>':'')+(e.textIt?'<div class="scheda-example-it">'+esc(e.textIt)+'</div>':'')+'</div>';});html+='</section>';}
-  if(l.seeAlso||(l.relatedLemmas&&l.relatedLemmas.length)){html+='<section class="scheda-section"><h2 class="scheda-section-title">Rimandi e lemmi correlati</h2>';if(l.seeAlso)html+='<div class="scheda-see-also">Vedi anche: <a href="#" id="scheda-see-also-link">'+esc(l.seeAlso)+'</a></div>';(l.relatedLemmas||[]).forEach(function(r){html+='<div class="scheda-related"><span class="scheda-related-cat">'+esc(r.category)+':</span> '+esc(r.term)+'</div>';});html+='</section>';}
-  if(l.tags&&l.tags.length){html+='<section class="scheda-section"><h2 class="scheda-section-title">Tag tematici</h2><div class="scheda-tags">';l.tags.forEach(function(t){html+='<span>'+esc(typeof t==='string'?t:t.name||t.label||(t.tag&&t.tag.name)||'')+'</span>';});html+='</div></section>';}
-  if(l.hasAudio||l.hasPhoto||l.hasVideo||['audio','photo','video'].some(function(k){return mediaEntries(l,k).length;})){
-    html+='<section class="scheda-section"><h2 class="scheda-section-title">Media associati</h2><div class="lex-badges">';
-    [['audio','Audio','♫'],['photo','Foto','▣'],['video','Video','▶']].forEach(function(m){if(l['has'+m[0][0].toUpperCase()+m[0].slice(1)]||mediaEntries(l,m[0]).length)html+='<button class="lex-badge '+m[0]+'" id="media-'+m[0]+'">'+m[2]+' '+m[1]+'</button>';});
-    html+='</div><div class="scheda-media-player" id="scheda-media-player"></div></section>';
-  }
-  html+='<div class="scheda-controls">';
-  if(isAuth)html+='<button class="btn-primary'+(saved?' saved':'')+'" id="scheda-save-btn" aria-pressed="'+saved+'">♥ '+(saved?'Salvato':'Salva')+'</button>';
-  html+='<button class="btn-secondary" id="scheda-share-btn">↗ Condividi</button><button class="btn-secondary" id="scheda-print-btn">Stampa</button>';
-  if(l.cat==='verb')html+='<button class="btn-secondary" id="scheda-conj-btn">Coniugazione</button>';
-  html+='</div></article>';
-  var page=document.getElementById('page-scheda');
-  if(!page.classList.contains('active'))schedaFocus=document.activeElement;
-  document.getElementById('scheda-content').innerHTML=html;page.classList.add('active');document.body.style.overflow='hidden';
-  var bind=function(id,fn){var el=document.getElementById(id);if(el)el.addEventListener('click',fn);};
-  bind('scheda-close-btn',closeScheda); document.getElementById('scheda-close-btn').focus();
-  bind('scheda-print-btn',function(){window.print();});
-  bind('scheda-save-btn',function(){toggleSave(Number(id));});
-  bind('scheda-share-btn',function(){shareWord(l.word,id);});
-  bind('scheda-see-also-link',function(e){e.preventDefault();closeScheda();searchByWord(l.seeAlso);});
-  bind('scheda-conj-btn',function(){openConjugationModal(id,l.word);});
-  function displayMedia(kind,play){
-    var player=document.getElementById('scheda-media-player');if(!player)return;player.replaceChildren();
-    var entries=mediaEntries(l,kind).filter(function(m){return safeMediaUrl(m.url);});
-    if(!entries.length){showToast('File multimediale non ancora collegato','info');return;}
-    entries.forEach(function(m,i){var el=document.createElement(kind==='photo'?'img':kind);el.src=safeMediaUrl(m.url);if(kind==='photo'){el.alt=m.caption||'Foto del vocabolo';el.loading='lazy';}else{el.controls=true;el.preload='metadata';}player.appendChild(el);if(m.caption){var caption=document.createElement('p');caption.textContent=m.caption;player.appendChild(caption);}if(play&&i===0&&kind==='audio')el.play().catch(function(){showToast('Premi Play per ascoltare','info');});});
-  }
-  bind('scheda-audio-btn',function(){displayMedia('audio',true);});
-  ['audio','photo','video'].forEach(function(k){bind('media-'+k,function(){displayMedia(k,false);});});
-}
-
-function searchByWord(word) {
-  document.getElementById('adv-search-input').value = word;
-  goPage('search');
-  doAdvSearch(word);
-}
-
-// ════════════════════════════════════════
-//  SEARCH
-// ════════════════════════════════════════
-function doHeroSearch() {
-  var q = document.getElementById('hero-search-input').value.trim();
-  if(!q) return;
-  document.getElementById('topbar-search-input').value = q;
-  doTopSearch(q);
-}
-function doTopSearch(q) {
-  q = q || document.getElementById('topbar-search-input').value.trim();
-  if(!q) return;
-  document.getElementById('adv-search-input').value = q;
-  goPage('search');
-  doAdvSearch(q);
-}
-async function doAdvSearch(forceQ) {
-  var q = forceQ || document.getElementById('adv-search-input').value.trim();
-  var cat = document.getElementById('adv-cat-filter').value;
-  document.getElementById('search-query-label').textContent = q ? '"' + q + '"' : 'Tutti i termini';
-  document.getElementById('search-count-label').textContent = 'Ricerca in corso...';
-  document.getElementById('search-results-grid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-title">Ricerca...</div></div>';
+// POST /api/admin/lemmas
+router.post('/lemmas', async (req, res, next) => {
   try {
-    var url = '/search?q=' + encodeURIComponent(q) + '&direction=' + currentDirection;
-    if(cat) url += '&category=' + cat;
-    var data = await apiFetch(url);
-    var results = (data.data || []).map(normalizeAPILemma).filter(function(l){ return l.direction === currentDirection; });
-    document.getElementById('search-count-label').textContent = results.length + ' termini trovati';
-    document.getElementById('search-results-grid').innerHTML = results.length
-      ? renderLemmaCards(results)
-      : '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">-</div><div class="empty-title">Nessun risultato</div><button class="btn-primary" style="margin-top:12px" onclick="goPage(\'user\');switchUserTab(\'proposals\')">Proponi il termine</button></div>';
-  } catch(err) { document.getElementById('search-count-label').textContent = 'Errore nella ricerca'; }
-}
+    var {
+      word, phonetic, category, gender, translation, definition, etymology,
+      area, status, tags, examples,
+      variants, grammaticalCategory, grammaticalExceptions, seeAlso, direction,
+      translations, relatedLemmas,
+    } = req.body;
 
-// ════════════════════════════════════════
-//  SAVE / TOGGLE
-// ════════════════════════════════════════
-async function toggleSave(id) {
-  if(!currentUser||currentUser.role==='guest'){showToast('Accedi per salvare','info');return;}
-  var idx = savedWords.indexOf(id);
-  try {
-    if(idx>=0) {
-      await apiFetch('/user/saved/'+id,{method:'DELETE'});
-      savedWords.splice(idx,1);
-      showToast('Rimosso dai salvati','info');
-    } else {
-      await apiFetch('/user/saved/'+id,{method:'POST'});
-      savedWords.push(id);
-      showToast('Aggiunto ai salvati','success');
+    if (!word || !translation || !category) {
+      return res.status(400).json({ error: 'word, translation e category sono obbligatori' });
     }
-    document.getElementById('saved-count-badge').textContent = savedWords.length;
-    var btn = document.getElementById('scheda-save-btn');
-    if(btn) { var active=savedWords.includes(id);btn.classList.toggle('saved',active);btn.textContent=active?'♥ Salvato':'♥ Salva';btn.setAttribute('aria-pressed',String(active)); }
-  } catch(err) { showToast('Errore nel salvataggio','error'); }
-}
 
-async function shareWord(word,id) {
-  var url=new URL(location.href);url.searchParams.set('lemma',id);
-  try { if(navigator.share){await navigator.share({title:'Grecanico - '+word,url:url.href});}else if(navigator.clipboard){await navigator.clipboard.writeText(url.href);showToast('Link copiato','success');}else{window.prompt('Copia il collegamento al vocabolo',url.href);} } catch(e){if(e.name!=='AbortError')window.prompt('Copia il collegamento al vocabolo',url.href);}
-}
-
-// ════════════════════════════════════════
-//  USER PAGE
-// ════════════════════════════════════════
-function switchUserTab(t) {
-  ['saved','proposals','history'].forEach(function(tab){ document.getElementById('user-tab-'+tab).style.display = tab===t?'':'none'; });
-  document.querySelectorAll('#page-user .admin-tab').forEach(function(el,i){ el.classList.toggle('active',['saved','proposals','history'][i]===t); });
-  if(t==='saved') renderSavedList();
-  if(t==='history') renderHistory();
-}
-
-async function renderUserPage() {
-  await loadSavedWords();
-  renderSavedList();
-}
-
-async function renderSavedList() {
-  var container = document.getElementById('saved-list-container');
-  container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3)">Caricamento...</div>';
-  try {
-    var data = await apiFetch('/user/saved');
-    if(!data.length){container.innerHTML='<div class="empty-state"><div class="empty-title">Nessuna parola salvata</div></div>';return;}
-    container.innerHTML = data.map(function(s){
-      var l=s.lemma;
-      return '<div class="saved-item" onclick="openScheda('+l.id+')">' +
-        '<div><div class="saved-word">'+l.word+'</div><div class="saved-it">'+l.translation+'</div></div>' +
-        '<span class="saved-date">'+new Date(s.savedAt).toLocaleDateString('it-IT')+'</span>' +
-        '<button class="saved-remove" onclick="event.stopPropagation();toggleSave('+l.id+').then(function(){renderSavedList();})">x</button></div>';
-    }).join('');
-  } catch(err){container.innerHTML='<div class="empty-state"><div class="empty-title">Errore</div></div>';}
-}
-
-async function renderHistory() {
-  var container = document.getElementById('history-list');
-  try {
-    var data = await apiFetch('/user/history');
-    if(!data.length){container.innerHTML='<div class="empty-state"><div class="empty-title">Nessuna ricerca</div></div>';return;}
-    container.innerHTML = data.map(function(h){
-      return '<div class="saved-item"><div><div class="saved-word">'+h.query+'</div></div><span class="saved-date">'+new Date(h.searchedAt).toLocaleDateString('it-IT')+'</span></div>';
-    }).join('');
-  } catch(err){container.innerHTML='';}
-}
-
-async function sendProposal() {
-  var w=document.getElementById('prop-word').value.trim();
-  var it=document.getElementById('prop-it').value.trim();
-  var cat=document.getElementById('prop-cat').value;
-  if(!w||!it){showToast('Compila almeno il termine e la traduzione','error');return;}
-  try {
-    await apiFetch('/user/proposals',{method:'POST',body:JSON.stringify({word:w,translation:it,category:cat||undefined})});
-    showToast('Proposta inviata!','success');
-    document.getElementById('prop-word').value='';
-    document.getElementById('prop-it').value='';
-  } catch(err){showToast('Errore','error');}
-}
-
-// ════════════════════════════════════════
-//  ADMIN PAGE
-// ════════════════════════════════════════
-function switchAdminTab(t) {
-  ['lemmi','proposte','utenti','nuovo','import'].forEach(function(tab){ document.getElementById('admin-tab-'+tab).style.display=tab===t?'':'none'; });
-  document.querySelectorAll('#page-admin .admin-tab').forEach(function(el,i){ el.classList.toggle('active',['lemmi','proposte','utenti','nuovo','import'][i]===t); });
-}
-
-async function renderAdminPage() {
-  renderAdminTable();
-  renderAdminProposals();
-  renderAdminUsers();
-  try {
-    var stats = await apiFetch('/admin/stats');
-    var byStatus = stats.byStatus || [];
-    var published = byStatus.find(function(s){return s.status==='PUBLISHED';});
-    var draft = byStatus.find(function(s){return s.status==='DRAFT';});
-    document.getElementById('admin-stat-lemmi').textContent = published ? published._count : 0;
-    document.getElementById('admin-stat-draft').textContent = draft ? draft._count : 0;
-    document.getElementById('admin-stat-prop').textContent = stats.pendingProposals || 0;
-    document.getElementById('admin-stat-users').textContent = stats.totalUsers || 0;
-  } catch(e){}
-}
-
-async function renderAdminTable() {
-  var q=(document.getElementById('admin-filter-input')||{}).value||'';
-  var s=(document.getElementById('admin-status-filter')||{}).value||'';
-  var d=(document.getElementById('admin-dir-filter')||{}).value||'';
-  var url='/admin/lemmas?limit=100';
-  if(q) url+='&q='+encodeURIComponent(q);
-  if(s) url+='&status='+s;
-  try {
-    var data = await apiFetch(url);
-    var rows = data.data||[];
-    if(d) rows = rows.filter(function(l){return l.direction===d;});
-    document.getElementById('admin-lemmi-tbody').innerHTML = rows.map(function(l){
-      var dirLabel = l.direction==='IT_GR' ? 'IT-GR' : 'GR-IT';
-      return '<tr>' +
-        '<td class="word-cell">'+l.word+'</td>' +
-        '<td><span style="font-size:11px;font-weight:600;color:var(--ink3)">'+dirLabel+'</span></td>' +
-        '<td>'+(l.grammaticalCategory||catLabel(l.category))+'</td>' +
-        '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+l.translation+'</td>' +
-        '<td><div class="lex-badges" style="margin:0">'+(mediaBadges({hasAudio:(l.media||[]).some(function(m){return m.type==='AUDIO';}),hasPhoto:(l.media||[]).some(function(m){return m.type==='PHOTO';}),hasVideo:(l.media||[]).some(function(m){return m.type==='VIDEO';})})||'—')+'</div></td>' +
-        '<td><span class="status-badge '+(l.status||'').toLowerCase()+'">'+statusLabel(l.status)+'</span></td>' +
-        '<td><div class="action-btns">' +
-          '<button class="btn-sm" onclick="openScheda('+l.id+')">Vedi</button>' +
-          '<button class="btn-sm" onclick="openEditModal('+l.id+')">Modifica</button>' +
-          '<button class="btn-sm danger" onclick="deleteLemma('+l.id+')">Elimina</button>' +
-        '</div></td></tr>';
-    }).join('');
-  } catch(err){document.getElementById('admin-lemmi-tbody').innerHTML='<tr><td colspan="7" style="text-align:center">Errore caricamento</td></tr>';}
-}
-
-async function deleteLemma(id) {
-  if(!confirm('Eliminare questo lemma?')) return;
-  try { await apiFetch('/admin/lemmas/'+id,{method:'DELETE'}); showToast('Lemma eliminato','success'); renderAdminTable(); renderAll(); }
-  catch(err){showToast('Errore','error');}
-}
-
-async function renderAdminProposals() {
-  try {
-    var data = await apiFetch('/admin/proposals');
-    document.getElementById('admin-proposals-tbody').innerHTML = data.map(function(p){
-      return '<tr>' +
-        '<td class="word-cell">'+p.word+' <span style="font-size:13px;font-weight:400;color:var(--ink3)">- '+p.translation+'</span></td>' +
-        '<td>'+(p.user?p.user.name:'Anonimo')+'</td>' +
-        '<td>'+new Date(p.createdAt).toLocaleDateString('it-IT')+'</td>' +
-        '<td><span class="status-badge '+(p.status||'').toLowerCase()+'">'+(p.status||'')+'</span></td>' +
-        '<td><div class="action-btns">' +
-          '<button class="btn-sm success" onclick="reviewProposal('+p.id+',\'APPROVED\')">Approva</button>' +
-          '<button class="btn-sm danger" onclick="reviewProposal('+p.id+',\'REJECTED\')">Rifiuta</button>' +
-        '</div></td></tr>';
-    }).join('');
-  } catch(err){}
-}
-
-async function reviewProposal(id,status) {
-  try { await apiFetch('/admin/proposals/'+id,{method:'PATCH',body:JSON.stringify({status})}); showToast(status==='APPROVED'?'Approvata':'Rifiutata',status==='APPROVED'?'success':'info'); renderAdminProposals(); }
-  catch(err){showToast('Errore','error');}
-}
-
-async function renderAdminUsers() {
-  try {
-    var data = await apiFetch('/admin/users');
-    var roleColors={ADMIN:'published',EDITOR:'review',USER:'draft'};
-    document.getElementById('admin-users-tbody').innerHTML = data.map(function(u){
-      return '<tr>' +
-        '<td><strong>'+u.name+'</strong></td>' +
-        '<td style="color:var(--ink3);font-size:13px">'+u.email+'</td>' +
-        '<td><span class="status-badge '+(roleColors[u.role]||'draft')+'">'+u.role+'</span></td>' +
-        '<td style="color:var(--ink3);font-size:13px">'+new Date(u.createdAt).toLocaleDateString('it-IT')+'</td>' +
-        '<td style="text-align:center">'+(u._count?u._count.savedWords:0)+'</td>' +
-        '<td><div class="action-btns">' +
-          '<button class="btn-sm" onclick="openEditUserModal('+u.id+',\''+u.name+'\',\''+u.email+'\',\''+u.role+'\','+u.isActive+')">Modifica</button>' +
-          '<button class="btn-sm danger" onclick="deleteUser('+u.id+',\''+u.name+'\')">Elimina</button>' +
-        '</div></td></tr>';
-    }).join('');
-  } catch(err){}
-}
-
-// Gestione media amministrazione: si associano file già ospitati a un URL HTTPS.
-function adminMediaFields(prefix, existing) {
-  var esc=escapeScheda;
-  var html='<h3>Contenuti multimediali</h3><p class="admin-media-note">Incolla il collegamento HTTPS diretto al file audio, foto o video. I file devono essere già ospitati online; non si tratta di un caricamento dal computer.</p>';
-  if(Array.isArray(existing)&&existing.length){
-    html+='<p class="form-label">Media già associati</p>';
-    existing.forEach(function(m){
-      var type=String(m.type||'').toLowerCase(), url=safeMediaUrl(m.url);
-      if(!['audio','photo','video'].includes(type))return;
-      html+='<div class="admin-media-existing"><span class="lex-badge '+type+'">'+({audio:'Audio',photo:'Foto',video:'Video'}[type])+'</span> '+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(m.caption||m.url)+'</a>':esc(m.caption||m.url));
-      if(Number.isInteger(m.id))html+='<label><input type="checkbox" data-media-remove="'+m.id+'"> Rimuovi associazione</label>';
-      html+='</div>';
+    const newMedia = parseNewMedia(req.body.mediaAdd, req.user.id);
+    var lemma = await prisma.lemma.create({
+      data: {
+        word, phonetic, translation, definition, etymology, area, gender,
+        variants, grammaticalCategory, grammaticalExceptions, seeAlso,
+        category:  category.toUpperCase(),
+        status:    (status || 'DRAFT').toUpperCase(),
+        direction: (direction || 'GR_IT').toUpperCase(),
+        createdById: req.user.id,
+        media: newMedia.length ? {create:newMedia} : undefined,
+        examples: examples?.length ? {
+          create: examples.map(function(ex, i) {
+            return { textGr: ex.textGr, textIt: ex.textIt, source: ex.source, sortOrder: i };
+          }),
+        } : undefined,
+        translations: translations?.length ? {
+          create: translations.map(function(t, i) {
+            return { text: t.text, sortOrder: i };
+          }),
+        } : undefined,
+        relatedLemmas: relatedLemmas?.length ? {
+          create: relatedLemmas.map(function(r, i) {
+            return { category: r.category, term: r.term, sortOrder: i };
+          }),
+        } : undefined,
+        tags: tags?.length ? {
+          create: await Promise.all(tags.map(async function(name) {
+            var tag = await prisma.tag.upsert({ where:{name}, create:{name}, update:{} });
+            return { tagId: tag.id };
+          })),
+        } : undefined,
+      },
+      include: { examples: true, translations: true, relatedLemmas: true, tags: { include: { tag: true } }, media: true },
     });
-    html+='<p class="admin-media-note">I media esistenti vengono conservati, salvo rimozione esplicita.</p>';
-  }
-  [['audio','♫ Audio / pronuncia','MP3, WAV, OGG'],['photo','▣ Foto','JPG, PNG, WebP'],['video','▶ Video','MP4, WebM']].forEach(function(t){
-    html+='<div class="form-group"><label class="lex-badge '+t[0]+'" for="'+prefix+'-media-'+t[0]+'">'+t[1]+'</label><div class="admin-media-row"><input class="form-input" type="url" id="'+prefix+'-media-'+t[0]+'" placeholder="URL HTTPS diretto ('+t[2]+')" aria-label="URL '+t[0]+'"><input class="form-input" id="'+prefix+'-caption-'+t[0]+'" placeholder="Didascalia / fonte (facoltativa)" aria-label="Didascalia '+t[0]+'"></div></div>';
+
+    res.status(201).json(lemma);
+  } catch(err) { next(err); }
+});
+// PUT /api/admin/lemmas/:id — aggiornamento completo senza migrazioni
+router.put('/lemmas/:id', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if(!Number.isInteger(id) || id < 1) return res.status(400).json({error:'ID non valido'});
+    const body = req.body || {};
+    const data = {};
+    const fields = ['word','phonetic','translation','definition','etymology','area','gender',
+      'variants','grammaticalCategory','grammaticalExceptions','seeAlso'];
+    fields.forEach(function(field) {
+      if(Object.prototype.hasOwnProperty.call(body,field)) data[field] = body[field] === '' ? null : body[field];
+    });
+    for(const field of ['word','translation']) {
+      if(Object.prototype.hasOwnProperty.call(body,field) && !String(body[field]||'').trim())
+        return res.status(400).json({error:field+' obbligatorio'});
+    }
+    const valid = { category:['NOUN','VERB','ADJ','ADV','EXPR'],
+      direction:['GR_IT','IT_GR'], status:['DRAFT','REVIEW','PUBLISHED'] };
+    for(const field of Object.keys(valid)) {
+      if(body[field] !== undefined) {
+        const value = String(body[field]).toUpperCase();
+        if(!valid[field].includes(value)) return res.status(400).json({error:field+' non valido'});
+        data[field] = value;
+      }
+    }
+    for(const field of ['translations','relatedLemmas','examples']) {
+      if(body[field] !== undefined && !Array.isArray(body[field]))
+        return res.status(400).json({error:field+' deve essere una lista'});
+    }
+    const newMedia = parseNewMedia(body.mediaAdd, req.user.id);
+    const removeIds = body.mediaRemove === undefined ? [] : body.mediaRemove;
+    if(!Array.isArray(removeIds) || removeIds.length > 100 || removeIds.some(x=>!Number.isInteger(x)||x<1))
+      return res.status(400).json({error:'Identificativi media non validi'});
+    const lemma = await prisma.$transaction(async function(tx) {
+      // Mantiene tutti i media non selezionati esplicitamente per la rimozione.
+      if(removeIds.length) await tx.media.deleteMany({where:{lemmaId:id,id:{in:removeIds}}});
+      if(newMedia.length) data.media = {create:newMedia};
+      // Tutte le modifiche sono atomiche: un errore annulla l'intero aggiornamento.
+      if(body.translations !== undefined) {
+        await tx.translation.deleteMany({where:{lemmaId:id}});
+        if(body.translations.length) data.translations = {create:body.translations.map(function(t,i){
+          return {text:String(t.text||'').trim(),sortOrder:i};
+        }).filter(function(t){return t.text;})};
+      }
+      if(body.relatedLemmas !== undefined) {
+        await tx.relatedLemma.deleteMany({where:{lemmaId:id}});
+        if(body.relatedLemmas.length) data.relatedLemmas = {create:body.relatedLemmas.map(function(r,i){
+          return {category:String(r.category||'').trim(),term:String(r.term||'').trim(),sortOrder:i};
+        }).filter(function(r){return r.category && r.term;})};
+      }
+      if(body.examples !== undefined) {
+        await tx.example.deleteMany({where:{lemmaId:id}});
+        if(body.examples.length) data.examples = {create:body.examples.map(function(ex,i){
+          return {textGr:String(ex.textGr||'').trim(),textIt:String(ex.textIt||'').trim(),sortOrder:i};
+        }).filter(function(ex){return ex.textGr && ex.textIt;})};
+      }
+      return tx.lemma.update({where:{id},data,include:{examples:true,translations:true,relatedLemmas:true,tags:{include:{tag:true}},media:true}});
+    });
+    res.json(lemma);
+  } catch(err) { next(err); }
+});
+
+// PATCH /api/admin/lemmas/:id/status
+router.patch('/lemmas/:id/status', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { status } = req.body;
+    const valid = ['DRAFT', 'REVIEW', 'PUBLISHED'];
+    if (!valid.includes(status?.toUpperCase())) {
+      return res.status(400).json({ error: 'Status non valido. Usa: DRAFT, REVIEW, PUBLISHED' });
+    }
+    const lemma = await prisma.lemma.update({
+      where: { id }, data: { status: status.toUpperCase() },
+    });
+    res.json(lemma);
+  } catch (err) { next(err); }
+});
+
+// DELETE /api/admin/lemmas/:id — solo ADMIN
+router.delete('/lemmas/:id', requireRole('ADMIN'), async (req, res, next) => {
+  try {
+    await prisma.lemma.delete({ where: { id: parseInt(req.params.id) } });
+    res.json({ deleted: true });
+  } catch (err) { next(err); }
+});
+
+// ═══════════════════════════════════════════════════════
+//  PROPOSTE
+// ═══════════════════════════════════════════════════════
+
+// GET /api/admin/proposals
+router.get('/proposals', async (req, res, next) => {
+  try {
+    const status = req.query.status?.toUpperCase();
+    const proposals = await prisma.proposal.findMany({
+      where: status ? { status } : {},
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+    res.json(proposals);
+  } catch (err) { next(err); }
+});
+
+// PATCH /api/admin/proposals/:id — approva o rifiuta
+router.patch('/proposals/:id', async (req, res, next) => {
+  try {
+    const id     = parseInt(req.params.id);
+    const { status } = req.body;
+    const valid  = ['REVIEW', 'APPROVED', 'REJECTED'];
+    if (!valid.includes(status?.toUpperCase())) {
+      return res.status(400).json({ error: 'Status non valido' });
+    }
+    const proposal = await prisma.proposal.update({
+      where: { id },
+      data: {
+        status:       status.toUpperCase(),
+        reviewedById: req.user.id,
+        reviewedAt:   new Date(),
+      },
+    });
+    res.json(proposal);
+  } catch (err) { next(err); }
+});
+
+// ═══════════════════════════════════════════════════════
+//  UTENTI — solo ADMIN
+// ═══════════════════════════════════════════════════════
+
+// GET /api/admin/users
+router.get('/users', requireRole('ADMIN'), async (req, res, next) => {
+  try {
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, name: true, email: true, role: true,
+        isActive: true, createdAt: true, lastLogin: true,
+        _count: { select: { savedWords: true, proposals: true } },
+      },
+    });
+    res.json(users);
+  } catch (err) { next(err); }
+});
+
+// PATCH /api/admin/users/:id/role
+router.patch('/users/:id/role', requireRole('ADMIN'), async (req, res, next) => {
+  try {
+    const id   = parseInt(req.params.id);
+    const { role } = req.body;
+    const valid = ['USER', 'EDITOR', 'ADMIN'];
+    if (!valid.includes(role?.toUpperCase())) {
+      return res.status(400).json({ error: 'Ruolo non valido. Usa: USER, EDITOR, ADMIN' });
+    }
+    const user = await prisma.user.update({
+      where: { id }, data: { role: role.toUpperCase() },
+      select: { id: true, name: true, email: true, role: true },
+    });
+    res.json(user);
+  } catch (err) { next(err); }
+});
+
+// PATCH /api/admin/users/:id/suspend
+router.patch('/users/:id/suspend', requireRole('ADMIN'), async (req, res, next) => {
+  try {
+    const id        = parseInt(req.params.id);
+    const { active } = req.body;
+    const user = await prisma.user.update({
+      where: { id }, data: { isActive: !!active },
+      select: { id: true, name: true, isActive: true },
+    });
+    res.json(user);
+  } catch (err) { next(err); }
+});
+
+// GET /api/admin/stats
+router.get('/stats', async (req, res, next) => {
+  try {
+    const [totalLemmas, byStatus, totalUsers, pendingProposals, recentSearches] = await Promise.all([
+      prisma.lemma.count(),
+      prisma.lemma.groupBy({ by: ['status'], _count: true }),
+      prisma.user.count(),
+      prisma.proposal.count({ where: { status: 'PENDING' } }),
+      prisma.searchHistory.count({
+        where: { searchedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+      }),
+    ]);
+    res.json({ totalLemmas, byStatus, totalUsers, pendingProposals, recentSearches });
+  } catch (err) { next(err); }
+});
+
+// DELETE /api/admin/users/:id
+router.delete('/users/:id', requireRole('ADMIN'), async (req, res, next) => {
+  try {
+    var id = parseInt(req.params.id);
+    if(id === req.user.id) {
+      return res.status(400).json({ error: 'Non puoi eliminare te stesso' });
+    }
+    await prisma.user.delete({ where: { id } });
+    res.json({ deleted: true });
+  } catch(err) { next(err); }
+});
+
+// PATCH /api/admin/users/:id/password
+router.patch('/users/:id/password', requireRole('ADMIN'), async (req, res, next) => {
+  try {
+    var id = parseInt(req.params.id);
+    var password = req.body.password;
+    if(!password || password.length < 8) {
+      return res.status(400).json({ error: 'Password troppo corta' });
+    }
+    var bcrypt = require('bcryptjs');
+    var hash = await bcrypt.hash(password, 12);
+    var user = await prisma.user.update({
+      where: { id },
+      data: { passwordHash: hash },
+      select: { id: true, name: true, email: true },
+    });
+    res.json(user);
+  } catch(err) { next(err); }
+});
+
+// POST /api/admin/import — importazione massiva da Excel/CSV
+const XLSX = require('xlsx');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+router.post('/import', requireRole('ADMIN', 'EDITOR'), upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nessun file caricato' });
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+    if (!rows.length) return res.status(400).json({ error: 'File vuoto o formato non valido' });
+    const createReverse = String(req.body?.createReverse || '').toLowerCase() === 'true';
+    const norm = s => String(s ?? '').normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
+    const key = d => JSON.stringify([d.direction, norm(d.word), norm(d.translation), d.category]);
+    const read = (row, ...names) => {
+      for (const name of names) if (row[name] != null && String(row[name]).trim()) return String(row[name]).trim();
+      return '';
+    };
+    const categories = {NOUN:'NOUN',VERB:'VERB',ADJ:'ADJ',ADV:'ADV',EXPR:'EXPR',sostantivo:'NOUN',verbo:'VERB',aggettivo:'ADJ',avverbio:'ADV',espressione:'EXPR'};
+    let created = 0, skipped = 0, duplicates = 0, reverseCreated = 0, reverseExisting = 0, reverseReview = 0, reverseFailed = 0;
+    const errors = [], warnings = [], accepted = [];
+    // Serializza le importazioni per evitare duplicati anche in caso di richieste simultanee.
+    // Nessuna modifica alle tabelle o alle voci preesistenti.
+    await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(68127342)::text AS locked`;
+      const existing = new Set((await tx.lemma.findMany({select:{direction:true,word:true,translation:true,category:true}})).map(key));
+      // Prima tutte le voci esplicite del file; le inverse non possono sostituirle.
+      for (let i=0; i<rows.length; i++) {
+        const row = rows[i], line = row.__rowNum__ != null ? row.__rowNum__ + 1 : i+2;
+        const word = read(row,'Termine','Lemma','word'), translation = read(row,'Traduzione','translation');
+        const direction = (read(row,'Direzione','direction') || 'GR_IT').toUpperCase();
+        const gram = read(row,'Cat.Grammaticale','Categoria grammaticale','grammaticalCategory');
+        const rawCat = read(row,'Categoria','category');
+        const category = categories[rawCat.toUpperCase()] || categories[rawCat.toLowerCase()] || (/^agg\b/i.test(gram)?'ADJ':/^avv\b/i.test(gram)?'ADV':/^v\b/i.test(gram)?'VERB':/^espr\b/i.test(gram)?'EXPR':'NOUN');
+        const status = (read(row,'Stato','status') || 'DRAFT').toUpperCase();
+        if (!word || !translation || !['GR_IT','IT_GR'].includes(direction) || !['DRAFT','REVIEW','PUBLISHED'].includes(status)) {
+          skipped++; errors.push('Riga '+line+': termine, traduzione, direzione o stato non valido'); continue;
+        }
+        if (rawCat && !categories[rawCat.toUpperCase()] && !categories[rawCat.toLowerCase()]) {skipped++; errors.push('Riga '+line+': categoria non riconosciuta'); continue;}
+        const seeAlso = read(row,'Vedi.Anche','Vedi anche','seeAlso');
+        const translations = read(row,'Traduzioni.Multiple','Traduzioni multiple','translations').split(/\r?\n/).map(s=>s.replace(/^\d+\.\s*/, '').trim()).filter(Boolean).map((text,sortOrder)=>({text,sortOrder}));
+        const relatedRaw = read(row,'Lemmi.Correlati','Lemmi correlati','relatedLemmas');
+        const related = relatedRaw.split(/\r?\n/).filter(s=>s.trim()).map((s,sortOrder)=>{const j=s.indexOf(':'); return j<1?null:{category:s.slice(0,j).trim(),term:s.slice(j+1).trim(),sortOrder};});
+        if (related.some(r=>!r || !r.category || !r.term)) {skipped++;errors.push('Riga '+line+': lemma correlato non valido (categoria: termine)');continue;}
+        const data = {word,translation,direction,category,status,createdById:req.user.id,
+          phonetic:read(row,'Pronuncia','phonetic'), definition:read(row,'Definizione','definition'),area:read(row,'Area','area'),
+          variants:read(row,'Varianti','variants'), grammaticalCategory:gram, grammaticalExceptions:read(row,'Eccezioni','grammaticalExceptions'),seeAlso};
+        const exGr=read(row,'Esempio.GR','Esempio Grecanico','example_gr'),exIt=read(row,'Esempio.IT','Esempio Italiano','example_it');
+        if(exGr || exIt) data.examples={create:[{textGr:exGr,textIt:exIt}]};
+        if(translations.length) data.translations={create:translations};
+        if(related.length) data.relatedLemmas={create:related};
+        const tags=[...new Set(read(row,'Tag','tags').split(',').map(s=>s.trim()).filter(Boolean))];
+        if(tags.length) data.tags={create:tags.map(name=>({tag:{connectOrCreate:{where:{name},create:{name}}}}))};
+        const k=key(data);
+        if(existing.has(k)) {skipped++;duplicates++;} else {await tx.lemma.create({data});existing.add(k);created++;}
+        accepted.push({line,word,translation,direction,category,seeAlso,translations,related});
+      }
+      if(createReverse) for(const row of accepted) {
+        const data={word:row.translation,translation:row.word,direction:row.direction==='GR_IT'?'IT_GR':'GR_IT',category:row.category,status:'DRAFT',createdById:req.user.id};
+        const k=key(data);
+        if(existing.has(k)) {reverseExisting++;continue;}
+        // Non trasformare elenchi, glosse o rimandi in una singola parola italiana/grecanica.
+        if(norm(row.word)===norm(row.translation) || row.seeAlso || row.related.length || row.translations.some(t=>norm(t.text)!==norm(row.translation)) || /[,;\/\n\r:()]/.test(row.translation)) {
+          reverseReview++; warnings.push('Riga '+row.line+' ('+row.word+'): voce inversa da creare manualmente');continue;
+        }
+        await tx.lemma.create({data});existing.add(k);reverseCreated++;
+      }
+    }, {maxWait:10000,timeout:120000});
+    res.json({success:true,created,skipped,duplicates,reverseCreated,reverseExisting,reverseReview,reverseFailed,total:rows.length,errors,warnings});
+  } catch(err) { next(err); }
+});
+// Dizionario storico italiano-grecanico: nessuna intestazione, coppie di colonne.
+function originalCell(v) { return String(v ?? '').trim(); }
+// La categoria tecnica rimane compatibile con l'enum Prisma esistente.
+// La sigla originale non viene sostituita da una traduzione inventata.
+function grammaticalInfo(raw) {
+  const s=String(raw??'').trim().toLowerCase().replace(/^\/+|\/+$/g,'').trim();
+  if (/^(?:s\.[mfn]\.|sostantivo\b|topon\.|nome proprio\b|cognome\b)/i.test(s)) return {code:'NOUN',label:/^topon\./.test(s)?'Toponimo':/^nome proprio|^cognome/.test(s)?'Nome proprio':/^s\.m\./.test(s)?'Sostantivo maschile':/^s\.f\./.test(s)?'Sostantivo femminile':/^s\.n\./.test(s)?'Sostantivo neutro':'Sostantivo'};
+  if (/^(?:v\.|verbo\b)/i.test(s)) return {code:'VERB',label:/^v\.med\./.test(s)?'Verbo medio':/^v\.impers\./.test(s)?'Verbo impersonale':'Verbo'};
+  if (/^(?:agg\.|aggettivo\b)/i.test(s)) return {code:'ADJ',label:'Aggettivo'};
+  if (/^(?:avv\.|avverbio\b)/i.test(s)) return {code:'ADV',label:'Avverbio'};
+  for(const [re,label] of [[/^(?:locuz\.|locuzione\b)/,'Locuzione'],[/^(?:prep\.|preposizione\b)/,'Preposizione'],[/^(?:cong\.|congiunzione\b)/,'Congiunzione'],[/^(?:pron\.|pronome\b)/,'Pronome'],[/^(?:art\.|articolo\b)/,'Articolo'],[/^(?:interiez\.|interiezione\b)/,'Interiezione'],[/^(?:esclam\.|esclamazione\b)/,'Esclamazione'],[/^(?:part\.|participio\b)/,'Participio'],[/^(?:neg\.|negazione\b)/,'Negazione'],[/^espressione\b/,'Espressione']]) if(re.test(s))return {code:'EXPR',label};
+  return null;
+}
+function originalCategory(raw) {
+  const s=originalCell(raw);
+  const slash=s.match(/^\/\s*([^/]+)\s*\//);
+  const plain=s.match(/^(?:s\.[mfn]\.(?:pl\.)?|agg\.|avv\.|v\.(?:med\.|impers\.(?:3sg\.)?)?|locuz\.|prep\.|cong\.|interiez\.|pron\.(?:pers\.|indef\.)?|part\.(?:pres\.|pass\.)?|esclam\.|art\.(?:det\.(?:(?:m|f|n)\.)?(?:(?:sg|pl)\.)?(?:nom\.)?)?|neg\.|topon\.(?:\s*[mfn]\.)?|nome proprio(?:\s*[mfn]\.)?|cognome)/i);
+  const m=slash&&grammaticalInfo(slash[1])?slash:plain;
+  const gram=m?(m===slash?m[1]:m[0]).trim():'';
+  const info=grammaticalInfo(gram);
+  return {gram,category:info?info.code:'EXPR',text:m?s.slice(m[0].length).trim():s};
+}
+function originalReverse(raw, italian) {
+  const parsed = originalCategory(raw);
+  // Invertiamo soltanto forme lessicali esplicite: nessuna glossa, rinvio o frase interpretata.
+  if (!parsed.gram || !['NOUN','ADJ','VERB','ADV'].includes(parsed.category)) return [];
+  const parts = parsed.text.split(',').map(s=>s.trim());
+  if (!parts.length || parts.some(s=>!/^\p{L}[\p{L}\p{M}'’\-]*$/u.test(s))) return [];
+  if (!italian || /[?]/.test(italian)) return [];
+  return parts.map(word=>({word,translation:italian,direction:'GR_IT',category:parsed.category,grammaticalCategory:parsed.gram,status:'DRAFT'}));
+}
+function originalPlan(rows, sheetName) {
+  return rows.map((row,i)=>({row: i+1, cells:row.map(originalCell)})).filter(r=>r.cells.some(Boolean)).map(({row,cells})=>{
+    const word=cells[0]||'', raw=cells[1]||'', parsed=originalCategory(raw);
+    const warnings=[], related=[], reverse=[];
+    if (!word || !raw || /^\?+$/.test(raw)) return {row,word,skip:true,warnings:['Riga '+row+': lemma o traduzione mancante/da verificare.'],reverse:[]};
+    const source = ['Fonte: '+sheetName+', riga '+row, 'Trascrizione originale:'].concat(cells.map((v,j)=>v?'Colonna '+(j+1)+': '+v:'').filter(Boolean)).join('\n');
+    const main={word,translation:parsed.text||raw,direction:'IT_GR',category:parsed.category,grammaticalCategory:parsed.gram,definition:source,status:'DRAFT'};
+    if (!parsed.gram) warnings.push('Riga '+row+' ('+word+'): categoria da verificare.');
+    const inv=originalReverse(raw,word); reverse.push(...inv);
+    if (!inv.length) warnings.push('Riga '+row+' ('+word+'): inversione principale da verificare.');
+    for (let j=2;j<cells.length;j+=2) {
+      const a=cells[j]||'',b=cells[j+1]||'';
+      if (!a&&!b) continue;
+      if (!a||!b) {warnings.push('Riga '+row+' ('+word+'): celle '+(j+1)+'/'+(j+2)+' incomplete; conservate nella trascrizione.'); continue;}
+      // Manteniamo il testo originale e l'abbinamento delle celle.
+      related.push({category:a,term:b,sortOrder:related.length});
+      const rev=originalReverse(b,a);reverse.push(...rev);
+      if (!rev.length) warnings.push('Riga '+row+' ('+word+'): espressione da verificare: '+a);
+    }
+    return {row,word,main,related,reverse,warnings};
   });
-  return html;
 }
-function collectAdminMedia(prefix){
-  var result=[];
-  ['audio','photo','video'].forEach(function(type){
-    var url=document.getElementById(prefix+'-media-'+type).value.trim();
-    if(!url)return;
-    var parsed;try{parsed=new URL(url);}catch(e){}
-    if(!parsed||parsed.protocol!=='https:'||parsed.username||parsed.password||url.length>2048)throw new Error('Inserisci un URL HTTPS diretto valido per '+type);
-    result.push({type:type.toUpperCase(),url:url,caption:document.getElementById(prefix+'-caption-'+type).value.trim()});
-  });
-  return result;
-}
-
-async function saveNewLemma() {
-  var w=document.getElementById('admin-word').value.trim();
-  var it=document.getElementById('admin-it').value.trim();
-  var cat=document.getElementById('admin-cat').value;
-  var dir=document.getElementById('admin-direction').value;
-  if(!w||!it||!cat){showToast('Compila almeno il termine, la traduzione e la categoria','error');return;}
-  
-  var translationsRaw = document.getElementById('admin-translations').value.trim();
-  var translations = [];
-  if(translationsRaw) {
-    translationsRaw.split('\n').forEach(function(line, i) {
-      var text = line.replace(/^\d+\.\s*/, '').trim();
-      if(text) translations.push({text:text, sortOrder:i});
-    });
-  }
-
-  var relatedRaw = document.getElementById('admin-related').value.trim();
-  var relatedLemmas = [];
-  if(relatedRaw) {
-    relatedRaw.split('\n').forEach(function(line, i) {
-      var parts = line.split(':');
-      if(parts.length >= 2) {
-        relatedLemmas.push({category: parts[0].trim(), term: parts.slice(1).join(':').trim(), sortOrder:i});
-      }
-    });
-  }
-
-  var mediaAdd; try{mediaAdd=collectAdminMedia('admin');}catch(e){showToast(e.message,'error');return;}
-  var createReverse = document.getElementById('admin-create-reverse').checked;
-  var reverseDir = dir === 'GR_IT' ? 'IT_GR' : 'GR_IT';
-  if(createReverse) {
-    if(w.toLocaleLowerCase('it') === it.toLocaleLowerCase('it')) {
-      showToast('Il lemma e la traduzione sono uguali: verifica prima la voce inversa','error'); return;
-    }
-    if(translations.length > 1 || relatedLemmas.length || document.getElementById('admin-seealso').value.trim()) {
-      showToast('Voce con più significati o rimandi: crea la voce inversa manualmente per evitare errori','error'); return;
-    }
-    var preview = 'VOCE PRINCIPALE\n' + w + ' → ' + it + ' (' + (dir === 'GR_IT' ? 'Grecanico → Italiano' : 'Italiano → Grecanico') + ')\n\n' +
-      'VOCE INVERSA (BOZZA)\n' + it + ' → ' + w + ' (' + (reverseDir === 'GR_IT' ? 'Grecanico → Italiano' : 'Italiano → Grecanico') + ')\n\n' +
-      'La voce inversa non copierà automaticamente definizione, esempi o pronuncia.\n\nConfermi la creazione delle due voci?';
-    if(!confirm(preview)) return;
-  }
-  var saveButton = document.getElementById('admin-save-new-btn');
-  if(saveButton.disabled) return;
-  saveButton.disabled = true;
-  saveButton.textContent = 'Salvataggio...';
-  var exGr=document.getElementById('admin-ex-gr').value.trim();
-  var exIt=document.getElementById('admin-ex-it').value.trim();
-
+router.post('/import-original', requireRole('ADMIN','EDITOR'), upload.single('file'), async (req,res,next)=>{
   try {
-    if(createReverse) {
-      // Controllo preventivo per evitare duplicati: se non riesce, non salva nulla.
-      var existingData = await apiFetch('/admin/lemmas?limit=200');
-      var existing = existingData.data || [];
-      var duplicates = existing.filter(function(l){
-        return (l.direction === dir && String(l.word||'').trim().toLocaleLowerCase('it') === w.toLocaleLowerCase('it')) ||
-          (l.direction === reverseDir && String(l.word||'').trim().toLocaleLowerCase('it') === it.toLocaleLowerCase('it'));
-      });
-      if(duplicates.length) {
-        showToast('Esiste già una delle due voci. Controlla in Admin → Lemmi prima di procedere.','error'); return;
+    if(!req.file)return res.status(400).json({error:'Seleziona un file Excel'});
+    const workbook=XLSX.read(req.file.buffer,{type:'buffer'});
+    const sheetName=String(req.body?.sheet||workbook.SheetNames[0]||'');
+    if(!workbook.SheetNames.includes(sheetName))return res.status(400).json({error:'Foglio non trovato'});
+    const sheet=workbook.Sheets[sheetName];
+    const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',blankrows:true,raw:false,range:0});
+    const plan=originalPlan(rows,sheetName);
+    const norm=s=>String(s??'').normalize('NFC').trim().replace(/\s+/g,' ').toLowerCase();
+    const key=d=>JSON.stringify([d.direction,norm(d.word),norm(d.translation)]);
+    if(String(req.body?.preview)==='true'){
+      const valid=plan.filter(p=>!p.skip);
+      return res.json({success:true,preview:true,sheet:sheetName,sheets:workbook.SheetNames,rows:plan.length,valid:valid.length,skipped:plan.length-valid.length,expressions:valid.reduce((n,p)=>n+p.related.length,0),reverseCandidates:new Set(valid.flatMap(p=>p.reverse.map(key))).size,reviewRows:plan.filter(p=>p.warnings.length).length,samples:valid.slice(0,6).map(p=>({row:p.row,word:p.word,translation:p.main.translation,gram:p.main.grammaticalCategory,related:p.related,reverse:p.reverse.map(x=>x.word)}))});
+    }
+    const offset=Number(req.body?.offset||0), limit=Number(req.body?.limit||30);
+    if(!Number.isInteger(offset)||offset<0||!Number.isInteger(limit)||limit<1||limit>50)return res.status(400).json({error:'Intervallo non valido'});
+    const batch=plan.slice(offset,offset+limit), reverseEnabled=String(req.body?.createReverse)==='true';
+    let created=0,skipped=0,duplicates=0,reverseCreated=0,reverseExisting=0;
+    const warnings=batch.flatMap(p=>p.warnings);
+    await prisma.$transaction(async tx=>{
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(68127342)::text AS locked`;
+      // Legge le chiavi esistenti: confronto Unicode/case-insensitive; nessuna sovrascrittura.
+      const existing=new Set((await tx.lemma.findMany({select:{word:true,translation:true,direction:true,category:true}})).map(key));
+      for(const p of batch){
+        if(p.skip){skipped++;continue;}
+        const k=key(p.main);
+        if(existing.has(k)){duplicates++;warnings.push('Riga '+p.row+' ('+p.word+'): voce già presente; eventuali informazioni aggiuntive da confrontare manualmente.');continue;}
+        await tx.lemma.create({data:{...p.main,createdById:req.user.id,...(p.related.length?{relatedLemmas:{create:p.related}}:{})}});existing.add(k);created++;
       }
-    }
-    await apiFetch('/admin/lemmas',{method:'POST',body:JSON.stringify({
-      word:w, translation:it, category:cat, direction:dir,
-      phonetic:document.getElementById('admin-phonetic').value.trim(), mediaAdd:mediaAdd,
-      grammaticalCategory: document.getElementById('admin-gramcat').value.trim(),
-      grammaticalExceptions: document.getElementById('admin-gramex').value.trim(),
-      variants: document.getElementById('admin-variants').value.trim(),
-      seeAlso: document.getElementById('admin-seealso').value.trim(),
-      definition: document.getElementById('admin-def').value.trim(),
-      area: document.getElementById('admin-area').value.trim(),
-      status: document.getElementById('admin-status').value,
-      translations: translations,
-      relatedLemmas: relatedLemmas,
-      examples: exGr ? [{textGr:exGr, textIt:exIt}] : [],
-    })});
-    if(createReverse) {
-      try {
-        await apiFetch('/admin/lemmas',{method:'POST',body:JSON.stringify({
-          word:it, translation:w, category:cat, direction:reverseDir,
-          status:'DRAFT'
-        })});
-        showToast('Voce principale salvata e voce inversa creata in bozza','success');
-      } catch(reverseError) {
-        showToast('Voce principale salvata, ma voce inversa NON creata: '+reverseError.message,'error');
-      }
-    } else {
-      showToast('Lemma "'+w+'" salvato!','success');
-    }
-    document.getElementById('admin-phonetic').value='';
-    document.getElementById('admin-media-fields').innerHTML=adminMediaFields('admin',[]);
-    await renderAll();
-    switchAdminTab('lemmi');
-    renderAdminTable();
-  } catch(err){showToast('Errore: '+err.message,'error');}
-  finally { saveButton.disabled = false; saveButton.textContent = 'Salva lemma'; }
-}
+      if(reverseEnabled)for(const p of batch){if(p.skip)continue;for(const rev of p.reverse){const k=key(rev);if(existing.has(k)){reverseExisting++;continue;}await tx.lemma.create({data:{...rev,createdById:req.user.id}});existing.add(k);reverseCreated++;}}
+    },{maxWait:10000,timeout:60000});
+    res.json({success:true,sheet:sheetName,total:plan.length,nextOffset:Math.min(offset+batch.length,plan.length),created,skipped,duplicates,reverseCreated,reverseExisting,warnings});
+  }catch(err){next(err);}
+});
 
-// ════════════════════════════════════════
-//  EDIT MODAL
-// ════════════════════════════════════════
-async function openEditModal(id) {
-  var l;
-  try { l = await apiFetch('/admin/lemmas/'+id); if(!l) throw new Error('non trovato'); }
-  catch(err){ showToast('Errore caricamento lemma','error'); return; }
-  
-  var transText = (l.translations||[]).map(function(t,i){return (i+1)+'. '+t.text;}).join('\n');
-  var relText = (l.relatedLemmas||[]).map(function(r){return r.category+': '+r.term;}).join('\n');
-
-  document.getElementById('modal-body').innerHTML =
-    '<h2 style="font-family:var(--font-display);font-size:24px;margin-bottom:20px">Modifica: '+escapeScheda(l.word)+'</h2>' +
-    '<div class="form-row">' +
-      '<div class="form-group"><label class="form-label">Direzione</label><select class="form-select" id="edit-direction"><option value="GR_IT"'+(l.direction==='GR_IT'?' selected':'')+'>GR - IT</option><option value="IT_GR"'+(l.direction==='IT_GR'?' selected':'')+'>IT - GR</option></select></div>' +
-      '<div class="form-group"><label class="form-label">Categoria</label><select class="form-select" id="edit-category"><option value="NOUN"'+(String(l.category||'').toUpperCase()==='NOUN'?' selected':'')+'>Sostantivo</option><option value="VERB"'+(String(l.category||'').toUpperCase()==='VERB'?' selected':'')+'>Verbo</option><option value="ADJ"'+(String(l.category||'').toUpperCase()==='ADJ'?' selected':'')+'>Aggettivo</option><option value="ADV"'+(String(l.category||'').toUpperCase()==='ADV'?' selected':'')+'>Avverbio</option><option value="EXPR"'+(String(l.category||'').toUpperCase()==='EXPR'?' selected':'')+'>Espressione</option></select></div>' +
-    '</div>' +
-    '<div class="form-row"><div class="form-group"><label class="form-label">Lemma</label><input class="form-input" id="edit-word" value="'+escapeScheda(l.word||'')+'"></div><div class="form-group"><label class="form-label">Varianti</label><input class="form-input" id="edit-variants" value="'+escapeScheda(l.variants||'')+'"></div></div>' +
-    '<div class="form-row"><div class="form-group"><label class="form-label">Cat. grammaticale</label><input class="form-input" id="edit-gramcat" value="'+escapeScheda(l.grammaticalCategory||'')+'"></div><div class="form-group"><label class="form-label">Eccezioni</label><input class="form-input" id="edit-gramex" value="'+escapeScheda(l.grammaticalExceptions||'')+'"></div></div>' +
-    '<div class="form-group"><label class="form-label">Traduzione principale</label><input class="form-input" id="edit-translation" value="'+escapeScheda(l.translation||'')+'"></div>' +
-    '<div class="form-group"><label class="form-label">Traduzioni multiple (una per riga)</label><textarea class="form-textarea" id="edit-translations">'+escapeScheda(transText)+'</textarea></div>' +
-    '<div class="form-group"><label class="form-label">Vedi anche</label><input class="form-input" id="edit-seealso" value="'+escapeScheda(l.seeAlso||'')+'"></div>' +
-    '<div class="form-group"><label class="form-label">Lemmi correlati (categoria: termine)</label><textarea class="form-textarea" id="edit-related">'+escapeScheda(relText)+'</textarea></div>' +
-    '<div class="form-row"><div class="form-group"><label class="form-label">Area</label><input class="form-input" id="edit-area" value="'+escapeScheda(l.area||'')+'"></div><div class="form-group"><label class="form-label">Stato</label><select class="form-select" id="edit-status"><option value="DRAFT"'+(String(l.status||'').toUpperCase()==='DRAFT'?' selected':'')+'>Bozza</option><option value="REVIEW"'+(String(l.status||'').toUpperCase()==='REVIEW'?' selected':'')+'>In revisione</option><option value="PUBLISHED"'+(String(l.status).toUpperCase()==='PUBLISHED'?' selected':'')+'>Pubblicato</option></select></div></div>' +
-    '<div class="form-group"><label class="form-label" for="edit-phonetic">Pronuncia fonetica (IPA)</label><input class="form-input" id="edit-phonetic" value="'+escapeScheda(l.phonetic||'')+'"></div>' +
-    '<div class="form-group"><label class="form-label" for="edit-definition">Definizione estesa</label><textarea class="form-textarea" id="edit-definition">'+escapeScheda(l.definition||'')+'</textarea></div>' +
-    '<div class="admin-media-box" id="edit-media-fields">'+adminMediaFields('edit',l.media||[])+'</div>' +
-    '<div class="modal-actions" style="display:flex;gap:10px;margin-top:20px"><button class="btn-primary" onclick="saveLemmaEdit('+id+')">Salva modifiche</button><button class="btn-secondary" onclick="closeModal()">Annulla</button></div>';
-
-  document.getElementById('modal-overlay').classList.add('open');
-}
-
-async function saveLemmaEdit(id) {
-  var translationsRaw = document.getElementById('edit-translations').value.trim();
-  var translations = [];
-  if(translationsRaw) {
-    translationsRaw.split('\n').forEach(function(line,i){
-      var text=line.replace(/^\d+\.\s*/,'').trim();
-      if(text) translations.push({text:text,sortOrder:i});
-    });
-  }
-  var relatedRaw = document.getElementById('edit-related').value.trim();
-  var relatedLemmas = [];
-  if(relatedRaw) {
-    relatedRaw.split('\n').forEach(function(line,i){
-      var parts=line.split(':');
-      if(parts.length>=2) relatedLemmas.push({category:parts[0].trim(),term:parts.slice(1).join(':').trim(),sortOrder:i});
-    });
-  }
+// GET /api/admin/lemmas/:id/conjugations
+router.get('/lemmas/:id/conjugations', async (req, res, next) => {
   try {
-    var mediaAdd=collectAdminMedia('edit');
-    var mediaRemove=Array.from(document.querySelectorAll('#edit-media-fields [data-media-remove]:checked')).map(function(el){return Number(el.dataset.mediaRemove);});
-    if(mediaRemove.length&&!confirm('Rimuovere le associazioni multimediali selezionate?'))return;
-    await apiFetch('/admin/lemmas/'+id,{method:'PUT',body:JSON.stringify({
-      phonetic:document.getElementById('edit-phonetic').value.trim(),
-      definition:document.getElementById('edit-definition').value.trim(),
-      mediaAdd:mediaAdd,mediaRemove:mediaRemove,
-      word: document.getElementById('edit-word').value.trim(),
-      variants: document.getElementById('edit-variants').value.trim(),
-      grammaticalCategory: document.getElementById('edit-gramcat').value.trim(),
-      grammaticalExceptions: document.getElementById('edit-gramex').value.trim(),
-      translation: document.getElementById('edit-translation').value.trim(),
-      seeAlso: document.getElementById('edit-seealso').value.trim(),
-      area: document.getElementById('edit-area').value.trim(),
-      category: document.getElementById('edit-category').value,
-      direction: document.getElementById('edit-direction').value,
-      status: document.getElementById('edit-status').value,
-      translations: translations,
-      relatedLemmas: relatedLemmas,
-    })});
-    showToast('Lemma aggiornato!','success');
-    closeModal();
-    await renderAll();
-    renderAdminTable();
-  } catch(err){showToast('Errore: '+err.message,'error');}
-}
+    var conj = await prisma.conjugation.findMany({
+      where: { lemmaId: parseInt(req.params.id) },
+      orderBy: [{ mood: 'asc' }, { tense: 'asc' }],
+    });
+    res.json(conj);
+  } catch(err) { next(err); }
+});
 
-// ════════════════════════════════════════
-//  EDIT USER
-// ════════════════════════════════════════
-function openEditUserModal(id,name,email,role,isActive) {
-  document.getElementById('modal-body').innerHTML =
-    '<h2 style="font-family:var(--font-display);font-size:24px;margin-bottom:20px">Modifica utente</h2>' +
-    '<div class="form-group"><label class="form-label">Nome</label><input class="form-input" id="edit-user-name" value="'+name+'"></div>' +
-    '<div class="form-group"><label class="form-label">Email</label><input class="form-input" id="edit-user-email" value="'+email+'" type="email"></div>' +
-    '<div class="form-group"><label class="form-label">Ruolo</label><select class="form-select" id="edit-user-role"><option value="USER"'+(role==='USER'?' selected':'')+'>Utente</option><option value="EDITOR"'+(role==='EDITOR'?' selected':'')+'>Editor</option><option value="ADMIN"'+(role==='ADMIN'?' selected':'')+'>Admin</option></select></div>' +
-    '<div class="form-group"><label class="form-label">Stato</label><select class="form-select" id="edit-user-active"><option value="true"'+(isActive?' selected':'')+'>Attivo</option><option value="false"'+(!isActive?' selected':'')+'>Sospeso</option></select></div>' +
-    '<div class="form-group"><label class="form-label">Nuova password (lascia vuoto per non cambiare)</label><input class="form-input" id="edit-user-pw" type="password" placeholder="Min. 8 caratteri"></div>' +
-    '<div style="display:flex;gap:10px;margin-top:20px"><button class="btn-primary" onclick="saveUserEdit('+id+')">Salva modifiche</button><button class="btn-secondary" onclick="closeModal()">Annulla</button></div>';
-  document.getElementById('modal-overlay').classList.add('open');
-}
-
-async function saveUserEdit(id) {
-  var role=document.getElementById('edit-user-role').value;
-  var isActive=document.getElementById('edit-user-active').value==='true';
-  var pw=document.getElementById('edit-user-pw').value.trim();
+// POST /api/admin/lemmas/:id/conjugations
+router.post('/lemmas/:id/conjugations', async (req, res, next) => {
   try {
-    await apiFetch('/admin/users/'+id+'/role',{method:'PATCH',body:JSON.stringify({role})});
-    await apiFetch('/admin/users/'+id+'/suspend',{method:'PATCH',body:JSON.stringify({active:isActive})});
-    if(pw) { if(pw.length<8){showToast('Password troppo corta','error');return;} await apiFetch('/admin/users/'+id+'/password',{method:'PATCH',body:JSON.stringify({password:pw})}); }
-    showToast('Utente aggiornato!','success');
-    closeModal();
-    renderAdminUsers();
-  } catch(err){showToast('Errore: '+err.message,'error');}
-}
+    var lemmaId = parseInt(req.params.id);
+    var { mood, tense, person1s, person2s, person3s, person1p, person2p, person3p, notes } = req.body;
+    if(!mood || !tense) return res.status(400).json({ error: 'mood e tense sono obbligatori' });
+    var conj = await prisma.conjugation.create({
+      data: { lemmaId, mood, tense, person1s, person2s, person3s, person1p, person2p, person3p, notes },
+    });
+    res.status(201).json(conj);
+  } catch(err) { next(err); }
+});
 
-async function deleteUser(id,name) {
-  if(!confirm('Eliminare definitivamente ' + name + '?')) return;
-  try { await apiFetch('/admin/users/'+id,{method:'DELETE'}); showToast('Utente eliminato','success'); renderAdminUsers(); }
-  catch(err){showToast('Errore','error');}
-}
+// PUT /api/admin/conjugations/:id
+router.put('/conjugations/:id', async (req, res, next) => {
+  try {
+    var conj = await prisma.conjugation.update({
+      where: { id: parseInt(req.params.id) },
+      data: req.body,
+    });
+    res.json(conj);
+  } catch(err) { next(err); }
+});
 
-// ════════════════════════════════════════
-//  CONIUGAZIONE
-// ════════════════════════════════════════
-var MOODS=['Indicativo','Congiuntivo','Imperativo','Condizionale'];
-var TENSES=['Presente','Imperfetto','Passato remoto','Futuro'];
-var PERSONS=[{key:'person1s',label:'Io'},{key:'person2s',label:'Tu'},{key:'person3s',label:'Lui/Lei'},{key:'person1p',label:'Noi'},{key:'person2p',label:'Voi'},{key:'person3p',label:'Loro'}];
-
-async function openConjugationModal(lemmaId, word) {
-  closeModal();
-  setTimeout(async function() {
-    var conj=[];
-    try{conj=await apiFetch('/lemmas/'+lemmaId+'/conjugations');}catch(e){}
-    var isAdmin=currentUser&&(currentUser.role==='admin'||currentUser.role==='editor');
-    var html='<h2 style="font-family:var(--font-display);font-size:28px;font-weight:600;margin-bottom:4px">'+word+'</h2>';
-    html+='<div style="font-size:13px;color:var(--ink3);margin-bottom:20px">Tavola di coniugazione</div>';
-    if(!conj.length){html+='<div class="empty-state"><div class="empty-title">Nessuna coniugazione inserita</div></div>';}
-    else {
-      MOODS.forEach(function(mood){
-        var mc=conj.filter(function(c){return c.mood===mood;});
-        if(!mc.length)return;
-        html+='<div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:var(--gold);margin:16px 0 8px;text-transform:uppercase">'+mood+'</div>';
-        html+='<div style="overflow-x:auto;margin-bottom:16px"><table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr><th style="text-align:left;padding:6px 10px;border-bottom:2px solid var(--cream3);font-size:11px;color:var(--ink3)">TEMPO</th>';
-        PERSONS.forEach(function(p){html+='<th style="padding:6px 10px;border-bottom:2px solid var(--cream3);font-size:11px;color:var(--ink3)">'+p.label+'</th>';});
-        html+='</tr></thead><tbody>';
-        mc.forEach(function(c,i){
-          html+='<tr style="'+(i%2===0?'background:var(--cream2)':'')+'"><td style="padding:8px 10px;font-weight:600;font-size:13px">'+c.tense+'</td>';
-          PERSONS.forEach(function(p){html+='<td style="padding:8px 10px;text-align:center;font-family:var(--font-display);font-size:16px">'+(c[p.key]||'—')+'</td>';});
-          html+='</tr>';
-          if(c.notes)html+='<tr><td colspan="7" style="padding:4px 10px 10px;font-size:12px;color:var(--ink3);font-style:italic">'+c.notes+'</td></tr>';
-        });
-        html+='</tbody></table></div>';
-      });
-    }
-    if(isAdmin){
-      html+='<div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:var(--gold);margin:16px 0 8px;text-transform:uppercase">Aggiungi forma verbale</div>';
-      html+='<div class="form-row"><div class="form-group"><label class="form-label">Modo</label><select class="form-select" id="conj-mood">';
-      MOODS.forEach(function(m){html+='<option>'+m+'</option>';});
-      html+='</select></div><div class="form-group"><label class="form-label">Tempo</label><select class="form-select" id="conj-tense">';
-      TENSES.forEach(function(t){html+='<option>'+t+'</option>';});
-      html+='</select></div></div>';
-      html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">';
-      PERSONS.forEach(function(p){html+='<div class="form-group"><label class="form-label">'+p.label+'</label><input class="form-input" id="conj-'+p.key+'" placeholder="forma..."></div>';});
-      html+='</div>';
-      html+='<div class="form-group"><label class="form-label">Note</label><input class="form-input" id="conj-notes"></div>';
-      html+='<button class="btn-primary" id="save-conj-btn">Salva coniugazione</button>';
-    }
-    document.getElementById('modal-body').innerHTML=html;
-    document.getElementById('modal-overlay').classList.add('open');
-    var btn=document.getElementById('save-conj-btn');
-    if(btn)btn.addEventListener('click',function(){saveConjugation(lemmaId,word);});
-  },150);
-}
-
-async function saveConjugation(lemmaId,word){
-  var mood=document.getElementById('conj-mood').value;
-  var tense=document.getElementById('conj-tense').value;
-  var data={mood,tense,notes:document.getElementById('conj-notes').value};
-  PERSONS.forEach(function(p){var v=document.getElementById('conj-'+p.key).value.trim();if(v)data[p.key]=v;});
-  try{await apiFetch('/admin/lemmas/'+lemmaId+'/conjugations',{method:'POST',body:JSON.stringify(data)});showToast('Coniugazione salvata!','success');openConjugationModal(lemmaId,word);}
-  catch(err){showToast('Errore','error');}
-}
-
-// ════════════════════════════════════════
-//  IMPORT EXCEL
-// ════════════════════════════════════════
-var importFile=null;
-var originalState=null, originalBusy=false, originalStop=false, originalRequest=0;
-function resetOriginalImport(){
-  originalRequest++;originalState=null;
-  var mode=document.getElementById('import-format').value==='original';
-  document.getElementById('import-btn').style.display=mode?'none':'';
-  document.getElementById('original-preview-btn').style.display=mode?'':'none';
-  document.getElementById('original-controls').style.display='none';
-  document.getElementById('original-sheet').replaceChildren();
-  document.getElementById('original-progress').textContent='';
-  document.getElementById('import-result').style.display='none';
-  document.getElementById('import-preview-content').textContent=mode?'Analizza il file senza scrivere nel database.':'Controlla le colonne Termine, Traduzione, Direzione e Stato.';
-}
-async function requestOriginal(params){
-  var fd=new FormData();fd.append('file',importFile);
-  Object.keys(params).forEach(function(k){fd.append(k,String(params[k]));});
-  var res=await fetch(API+'/admin/import-original',{method:'POST',headers:{Authorization:'Bearer '+TOKEN},body:fd});
-  var data=await res.json();if(!res.ok||!data.success)throw new Error(data.error||'Errore importazione originale');return data;
-}
-async function previewOriginalImport(){
-  if(!importFile||originalBusy)return;
-  var serial=++originalRequest,select=document.getElementById('original-sheet'),sheet=select.value;
-  originalState=null;document.getElementById('original-controls').style.display='';
-  document.getElementById('original-pilot-btn').disabled=true;document.getElementById('original-all-btn').disabled=true;
-  document.getElementById('original-report').textContent='Analisi in corso…';document.getElementById('original-samples').replaceChildren();document.getElementById('original-progress').textContent='';
-  try{
-    var data=await requestOriginal({preview:true,sheet:sheet});if(serial!==originalRequest)return;
-    select.replaceChildren();data.sheets.forEach(function(name){var op=document.createElement('option');op.value=name;op.textContent=name;select.appendChild(op);});select.value=data.sheet;
-    originalState={sheet:data.sheet,offset:0,total:data.rows};
-    document.getElementById('original-report').textContent=['Foglio: '+data.sheet,'Righe non vuote: '+data.rows,'Righe con lemma e traduzione: '+data.valid,'Righe senza traduzione utilizzabile: '+data.skipped,'Espressioni associate: '+data.expressions,'Possibili voci inverse distinte (prima del controllo dei duplicati nel DB): '+data.reverseCandidates,'Righe con segnalazioni: '+data.reviewRows,'Nessuna modifica effettuata al database.'].join('\n');
-    var table=document.createElement('table');table.className='data-table';var head=table.insertRow();['Riga','Italiano','Grecanico','Categoria originale','Espressioni'].forEach(function(v){var th=document.createElement('th');th.textContent=v;head.appendChild(th);});data.samples.forEach(function(p){var tr=table.insertRow();[p.row,p.word,p.translation,p.gram,p.related.length].forEach(function(v){tr.insertCell().textContent=v;});});document.getElementById('original-samples').appendChild(table);
-    document.getElementById('original-pilot-btn').disabled=!data.valid;
-  }catch(e){if(serial===originalRequest)document.getElementById('original-report').textContent='Analisi non riuscita: '+e.message;}
-}
-async function runOriginalImport(all){
-  if(!originalState||originalBusy||!importFile)return;
-  var state=originalState;if(!confirm(all?'Importare le righe rimanenti in bozza, a blocchi?':'Importare le prime 10 righe in bozza?'))return;
-  originalBusy=true;originalStop=false;
-  var reverse=document.getElementById('import-create-reverse').checked;
-  var ids=['original-preview-btn','original-sheet','import-format','import-file-input','import-create-reverse','original-pilot-btn','original-all-btn'];ids.forEach(function(id){document.getElementById(id).disabled=true;});
-  var progress=document.getElementById('original-progress'),stop=document.getElementById('original-stop-btn');stop.style.display=all?'':'none';
-  var counts={created:0,skipped:0,duplicates:0,reverseCreated:0,reverseExisting:0},warnings=[];
-  try{
-    do{
-      var before=state.offset;progress.textContent='Elaborazione delle righe da '+(before+1)+' su '+state.total+'…';
-      var data=await requestOriginal({sheet:state.sheet,offset:before,limit:all?30:10,createReverse:reverse});
-      if(data.nextOffset<=before)throw new Error('Nessun avanzamento');state.offset=data.nextOffset;Object.keys(counts).forEach(function(k){counts[k]+=Number(data[k]||0);});warnings=warnings.concat(data.warnings||[]);
-      progress.textContent='Righe elaborate: '+state.offset+'/'+state.total+'\nVoci create: '+counts.created+' · Duplicati: '+counts.duplicates+' · Saltate: '+counts.skipped+'\nInverse create: '+counts.reverseCreated+' · Già presenti: '+counts.reverseExisting;
-    }while(all&&!originalStop&&state.offset<state.total);
-    if(warnings.length){var details=document.createElement('details'),sum=document.createElement('summary');sum.textContent='Segnalazioni del blocco ('+warnings.length+')';details.appendChild(sum);var pre=document.createElement('div');pre.style.whiteSpace='pre-wrap';pre.textContent=warnings.join('\n');details.appendChild(pre);progress.appendChild(details);}
-    if(state.offset===state.total)progress.appendChild(document.createTextNode('\nFoglio completato.'));
-    renderAdminPage();
-  }catch(e){progress.textContent+='\nImportazione interrotta: '+e.message+'\nUltima posizione confermata: '+state.offset+'. I blocchi precedenti restano salvati. Verifica prima di riprendere.';}
-  finally{originalBusy=false;ids.forEach(function(id){document.getElementById(id).disabled=false;});stop.style.display='none';document.getElementById('original-pilot-btn').disabled=state.offset!==0;document.getElementById('original-all-btn').disabled=state.offset===0||state.offset>=state.total;}
-}
-
-
-function downloadTemplate(){
-  var rows=[
-    ['Termine','Varianti','Pronuncia','Direzione','Categoria','Cat.Grammaticale','Eccezioni','Traduzione','Traduzioni.Multiple','Vedi.Anche','Lemmi.Correlati','Definizione','Area','Esempio.GR','Esempio.IT','Stato'],
-    ['AGRAFO','agrathto, agrasto','/agrafo/','GR_IT','ADJ','agg.','','non scritto','1. non scritto\n2. (di carta) bianco','','','','Bova','','','PUBLISHED'],
-    ['ACQUA','','/ˈakwa/','IT_GR','NOUN','s.','','nerò','1. s.n. nerò\n2. acqua abbondante: s.n. pelago','','s.n.: nerò\ns.n.: nimma, plima','','','','','PUBLISHED'],
-  ];
-  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
-  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='template_grecanico.csv';
-  a.click();
-  showToast('Template scaricato!','success');
-}
-
-function handleImportFile(input){
-  importFile=input.files[0] || null;
-  document.getElementById('import-preview').style.display=importFile?'':'none';
-  document.getElementById('import-result').style.display='none';
-  if(!importFile)return;
-  if(importFile.size>10*1024*1024){importFile=null;input.value='';document.getElementById('import-preview').style.display='none';showToast('Il file supera 10 MB','error');return;}
-  document.getElementById('import-file-name').textContent=importFile.name+' ('+Math.round(importFile.size/1024)+' KB)';
-  resetOriginalImport();
-}
-
-async function startImport(){
-  if(!importFile||document.getElementById('import-format').value!=='standard')return;
-  var btn=document.getElementById('import-btn');
-  if(btn.disabled)return;
-  var reverse=document.getElementById('import-create-reverse').checked;
-  if(!confirm(reverse?'Importare il file e creare anche le voci inverse in bozza?':'Importare soltanto le voci presenti nel file?'))return;
-  btn.textContent='Importazione...';btn.disabled=true;
-  var formData=new FormData();
-  formData.append('file',importFile);
-  formData.append('createReverse',String(reverse));
-  var result=document.getElementById('import-result');
-  result.style.display='';result.textContent='Importazione in corso…';
-  try{
-    var res=await fetch(API+'/admin/import',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:formData});
-    var data=await res.json();
-    if(!res.ok || !data.success)throw new Error(data.error||'Importazione fallita');
-    var lines=['Voci principali create: '+data.created,'Righe saltate: '+data.skipped];
-    if(typeof data.reverseCreated==='number'){
-      lines.push('Duplicati principali: '+data.duplicates,'Voci inverse create in bozza: '+data.reverseCreated,'Voci inverse già presenti: '+data.reverseExisting,'Voci inverse da creare manualmente: '+data.reverseReview);
-    }else if(reverse){lines.push('ATTENZIONE: il backend non conferma la creazione delle voci inverse.');}
-    result.innerHTML='<div style="background:var(--cream2);padding:16px;border-radius:var(--radius)"><strong>Importazione completata</strong><div style="white-space:pre-wrap;margin-top:8px">'+escapeScheda(lines.join('\n'))+'</div></div>';
-    var details=(data.errors||[]).concat(data.warnings||[]);
-    if(details.length){var report=document.createElement('details');var summary=document.createElement('summary');summary.textContent='Segnalazioni ('+details.length+')';report.appendChild(summary);var list=document.createElement('ul');list.style.paddingLeft='24px';details.forEach(function(message){var li=document.createElement('li');li.textContent=message;list.appendChild(li);});report.appendChild(list);result.appendChild(report);}
-    await renderAll();renderAdminPage();
-    showToast('Importazione completata','success');
-  }catch(err){result.textContent='Importazione non confermata: '+err.message;showToast('Controlla il risultato prima di riprovare','error');}
-  finally{btn.textContent='Importa lemmi';btn.disabled=false;}
-}
-
-// ════════════════════════════════════════
-//  MODAL
-// ════════════════════════════════════════
-function closeModal(e){
-  if(!e||e.target===document.getElementById('modal-overlay')||!e.target){
-    document.getElementById('modal-overlay').classList.remove('open');
-  }
-}
-
-// ════════════════════════════════════════
-//  HELPERS
-// ════════════════════════════════════════
-function catLabel(c){return {NOUN:'Sostantivo',VERB:'Verbo',ADJ:'Aggettivo',ADV:'Avverbio',EXPR:'Espressione',noun:'Sostantivo',verb:'Verbo',adj:'Aggettivo',adv:'Avverbio',expr:'Espressione'}[c]||c||'';}
-function statusLabel(s){return {PUBLISHED:'Pubblicato',DRAFT:'Bozza',REVIEW:'In revisione',PENDING:'In attesa',published:'Pubblicato',draft:'Bozza',review:'In revisione',pending:'In attesa'}[s]||s||'';}
-
-// ════════════════════════════════════════
-//  TOAST
-// ════════════════════════════════════════
-function showToast(msg,type){
-  var icons={success:'OK',error:'X',info:'i'};
-  var container=document.getElementById('toast-container');
-  var toast=document.createElement('div');
-  toast.className='toast '+type;
-  toast.innerHTML='<span>'+icons[type]+'</span><span>'+escapeScheda(msg)+'</span>';
-  container.appendChild(toast);
-  requestAnimationFrame(function(){requestAnimationFrame(function(){toast.classList.add('show');});});
-  setTimeout(function(){toast.classList.remove('show');setTimeout(function(){toast.remove();},400);},3500);
-}
-
-document.getElementById('page-scheda').addEventListener('click',function(e){if(e.target===this)closeScheda();});
-document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document.getElementById('modal-overlay').classList.contains('open'))closeModal();else closeScheda();}});
-document.getElementById('admin-media-fields').innerHTML=adminMediaFields('admin',[]);
-</script>
-</body>
-</html>
+// DELETE /api/admin/conjugations/:id
+router.delete('/conjugations/:id', async (req, res, next) => {
+  try {
+    await prisma.conjugation.delete({ where: { id: parseInt(req.params.id) } });
+    res.json({ deleted: true });
+  } catch(err) { next(err); }
+});
+module.exports = router;
