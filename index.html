@@ -813,7 +813,7 @@ function normalizeAPILemma(l) {
     tags: l.tags||[],
     area: l.area||'',
     hasAudio: l.hasAudio||false, hasPhoto: l.hasPhoto||false, hasVideo: l.hasVideo||false,
-    status: l.status||'published',
+    status: String(l.status||'').toUpperCase(),
     media: l.media||{},
   };
 }
@@ -1130,7 +1130,7 @@ async function renderAdminTable() {
         '<td><span style="font-size:11px;font-weight:600;color:var(--ink3)">'+dirLabel+'</span></td>' +
         '<td>'+(l.grammaticalCategory||catLabel(l.category))+'</td>' +
         '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+l.translation+'</td>' +
-        '<td><span class="status-badge '+(l.status||'').toLowerCase()+'">'+(l.status||'')+'</span></td>' +
+        '<td><span class="status-badge '+(l.status||'').toLowerCase()+'">'+statusLabel(l.status)+'</span></td>' +
         '<td><div class="action-btns">' +
           '<button class="btn-sm" onclick="openScheda('+l.id+')">Vedi</button>' +
           '<button class="btn-sm" onclick="openEditModal('+l.id+')">Modifica</button>' +
@@ -1253,7 +1253,7 @@ async function openEditModal(id) {
     '<h2 style="font-family:var(--font-display);font-size:24px;margin-bottom:20px">Modifica: '+l.word+'</h2>' +
     '<div class="form-row">' +
       '<div class="form-group"><label class="form-label">Direzione</label><select class="form-select" id="edit-direction"><option value="GR_IT"'+(l.direction==='GR_IT'?' selected':'')+'>GR - IT</option><option value="IT_GR"'+(l.direction==='IT_GR'?' selected':'')+'>IT - GR</option></select></div>' +
-      '<div class="form-group"><label class="form-label">Categoria</label><select class="form-select" id="edit-category"><option value="NOUN"'+(l.category==='noun'?' selected':'')+'>Sostantivo</option><option value="VERB"'+(l.category==='verb'?' selected':'')+'>Verbo</option><option value="ADJ"'+(l.category==='adj'?' selected':'')+'>Aggettivo</option><option value="ADV"'+(l.category==='adv'?' selected':'')+'>Avverbio</option><option value="EXPR"'+(l.category==='expr'?' selected':'')+'>Espressione</option></select></div>' +
+      '<div class="form-group"><label class="form-label">Categoria</label><select class="form-select" id="edit-category"><option value="NOUN"'+(String(l.category||'').toUpperCase()==='NOUN'?' selected':'')+'>Sostantivo</option><option value="VERB"'+(String(l.category||'').toUpperCase()==='VERB'?' selected':'')+'>Verbo</option><option value="ADJ"'+(String(l.category||'').toUpperCase()==='ADJ'?' selected':'')+'>Aggettivo</option><option value="ADV"'+(String(l.category||'').toUpperCase()==='ADV'?' selected':'')+'>Avverbio</option><option value="EXPR"'+(String(l.category||'').toUpperCase()==='EXPR'?' selected':'')+'>Espressione</option></select></div>' +
     '</div>' +
     '<div class="form-row"><div class="form-group"><label class="form-label">Lemma</label><input class="form-input" id="edit-word" value="'+(l.word||'')+'"></div><div class="form-group"><label class="form-label">Varianti</label><input class="form-input" id="edit-variants" value="'+(l.variants||'')+'"></div></div>' +
     '<div class="form-row"><div class="form-group"><label class="form-label">Cat. grammaticale</label><input class="form-input" id="edit-gramcat" value="'+(l.grammaticalCategory||'')+'"></div><div class="form-group"><label class="form-label">Eccezioni</label><input class="form-input" id="edit-gramex" value="'+(l.grammaticalExceptions||'')+'"></div></div>' +
@@ -1261,7 +1261,7 @@ async function openEditModal(id) {
     '<div class="form-group"><label class="form-label">Traduzioni multiple (una per riga)</label><textarea class="form-textarea" id="edit-translations">'+transText+'</textarea></div>' +
     '<div class="form-group"><label class="form-label">Vedi anche</label><input class="form-input" id="edit-seealso" value="'+(l.seeAlso||'')+'"></div>' +
     '<div class="form-group"><label class="form-label">Lemmi correlati (categoria: termine)</label><textarea class="form-textarea" id="edit-related">'+relText+'</textarea></div>' +
-    '<div class="form-row"><div class="form-group"><label class="form-label">Area</label><input class="form-input" id="edit-area" value="'+(l.area||'')+'"></div><div class="form-group"><label class="form-label">Stato</label><select class="form-select" id="edit-status"><option value="DRAFT"'+(l.status==='draft'?' selected':'')+'>Bozza</option><option value="REVIEW"'+(l.status==='review'?' selected':'')+'>In revisione</option><option value="PUBLISHED"'+(String(l.status).toUpperCase()==='PUBLISHED'?' selected':'')+'>Pubblicato</option></select></div></div>' +
+    '<div class="form-row"><div class="form-group"><label class="form-label">Area</label><input class="form-input" id="edit-area" value="'+(l.area||'')+'"></div><div class="form-group"><label class="form-label">Stato</label><select class="form-select" id="edit-status"><option value="DRAFT"'+(String(l.status||'').toUpperCase()==='DRAFT'?' selected':'')+'>Bozza</option><option value="REVIEW"'+(String(l.status||'').toUpperCase()==='REVIEW'?' selected':'')+'>In revisione</option><option value="PUBLISHED"'+(String(l.status).toUpperCase()==='PUBLISHED'?' selected':'')+'>Pubblicato</option></select></div></div>' +
     '<div class="modal-actions" style="display:flex;gap:10px;margin-top:20px"><button class="btn-primary" onclick="saveLemmaEdit('+id+')">Salva modifiche</button><button class="btn-secondary" onclick="closeModal()">Annulla</button></div>';
 
   document.getElementById('modal-overlay').classList.add('open');
