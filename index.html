@@ -717,6 +717,14 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--ink
           <p style="font-size:13px;color:var(--ink3);margin-bottom:20px">Carica un file Excel o CSV con i lemmi da importare.</p>
           <div style="margin-bottom:20px"><button class="btn-secondary" onclick="downloadTemplate()">Scarica template Excel</button></div>
           <div class="form-group">
+            <label class="form-label" for="import-format">Formato del dizionario</label>
+            <select class="form-select" id="import-format" onchange="resetOriginalImport()">
+              <option value="standard">Modello Excel standard</option>
+              <option value="original">Dizionario originale Italiano → Grecanico (senza intestazioni)</option>
+            </select>
+            <p style="font-size:12px;color:var(--ink3);margin-top:5px">Il formato originale conserva le espressioni nelle coppie di colonne e crea le voci in bozza.</p>
+          </div>
+          <div class="form-group">
             <label class="form-label">File Excel / CSV</label>
             <div class="upload-zone" onclick="document.getElementById('import-file-input').click()">
               <div style="font-size:28px;margin-bottom:8px">📊</div>
@@ -731,8 +739,19 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--ink
             <div id="import-preview-content" style="overflow-x:auto;margin-bottom:16px"></div>
             <div style="display:flex;gap:10px;align-items:center">
               <button class="btn-primary" onclick="startImport()" id="import-btn">Importa lemmi</button>
+              <button class="btn-primary" onclick="previewOriginalImport()" id="original-preview-btn" style="display:none">Analizza il file</button>
               <span id="import-file-name" style="font-size:13px;color:var(--ink3)"></span>
             </div>
+          </div>
+          <div id="original-controls" style="display:none;margin-top:16px">
+            <div class="form-group"><label class="form-label" for="original-sheet">Foglio Excel (da controllare separatamente)</label><select class="form-select" id="original-sheet" onchange="previewOriginalImport()"></select></div>
+            <div id="original-report" style="white-space:pre-wrap;background:var(--cream2);padding:16px;border-radius:var(--radius);margin-bottom:14px"></div>
+            <div id="original-samples" style="overflow-x:auto;margin-bottom:14px"></div>
+            <button class="btn-primary" id="original-pilot-btn" onclick="runOriginalImport(false)" disabled>Importa 10 righe di prova (bozza)</button>
+            <button class="btn-secondary" id="original-all-btn" onclick="runOriginalImport(true)" disabled>Importa le restanti righe a blocchi</button>
+            <button class="btn-secondary" id="original-stop-btn" onclick="originalStop=true" style="display:none">Ferma dopo il blocco corrente</button>
+            <p style="font-size:12px;color:var(--ink3);margin-top:8px">Controlla le voci di prova in Admin prima di procedere con il resto. Non chiudere la pagina durante un blocco. Le voci già presenti non vengono sovrascritte.</p>
+            <div id="original-progress" style="white-space:pre-wrap;margin-top:12px"></div>
           </div>
           <div id="import-result" style="display:none;margin-top:20px"></div>
         </div>
@@ -1631,6 +1650,61 @@ async function saveConjugation(lemmaId,word){
 //  IMPORT EXCEL
 // ════════════════════════════════════════
 var importFile=null;
+var originalState=null, originalBusy=false, originalStop=false, originalRequest=0;
+function resetOriginalImport(){
+  originalRequest++;originalState=null;
+  var mode=document.getElementById('import-format').value==='original';
+  document.getElementById('import-btn').style.display=mode?'none':'';
+  document.getElementById('original-preview-btn').style.display=mode?'':'none';
+  document.getElementById('original-controls').style.display='none';
+  document.getElementById('original-sheet').replaceChildren();
+  document.getElementById('original-progress').textContent='';
+  document.getElementById('import-result').style.display='none';
+  document.getElementById('import-preview-content').textContent=mode?'Analizza il file senza scrivere nel database.':'Controlla le colonne Termine, Traduzione, Direzione e Stato.';
+}
+async function requestOriginal(params){
+  var fd=new FormData();fd.append('file',importFile);
+  Object.keys(params).forEach(function(k){fd.append(k,String(params[k]));});
+  var res=await fetch(API+'/admin/import-original',{method:'POST',headers:{Authorization:'Bearer '+TOKEN},body:fd});
+  var data=await res.json();if(!res.ok||!data.success)throw new Error(data.error||'Errore importazione originale');return data;
+}
+async function previewOriginalImport(){
+  if(!importFile||originalBusy)return;
+  var serial=++originalRequest,select=document.getElementById('original-sheet'),sheet=select.value;
+  originalState=null;document.getElementById('original-controls').style.display='';
+  document.getElementById('original-pilot-btn').disabled=true;document.getElementById('original-all-btn').disabled=true;
+  document.getElementById('original-report').textContent='Analisi in corso…';document.getElementById('original-samples').replaceChildren();document.getElementById('original-progress').textContent='';
+  try{
+    var data=await requestOriginal({preview:true,sheet:sheet});if(serial!==originalRequest)return;
+    select.replaceChildren();data.sheets.forEach(function(name){var op=document.createElement('option');op.value=name;op.textContent=name;select.appendChild(op);});select.value=data.sheet;
+    originalState={sheet:data.sheet,offset:0,total:data.rows};
+    document.getElementById('original-report').textContent=['Foglio: '+data.sheet,'Righe non vuote: '+data.rows,'Righe con lemma e traduzione: '+data.valid,'Righe senza traduzione utilizzabile: '+data.skipped,'Espressioni associate: '+data.expressions,'Possibili voci inverse distinte (prima del controllo dei duplicati nel DB): '+data.reverseCandidates,'Righe con segnalazioni: '+data.reviewRows,'Nessuna modifica effettuata al database.'].join('\n');
+    var table=document.createElement('table');table.className='data-table';var head=table.insertRow();['Riga','Italiano','Grecanico','Categoria originale','Espressioni'].forEach(function(v){var th=document.createElement('th');th.textContent=v;head.appendChild(th);});data.samples.forEach(function(p){var tr=table.insertRow();[p.row,p.word,p.translation,p.gram,p.related.length].forEach(function(v){tr.insertCell().textContent=v;});});document.getElementById('original-samples').appendChild(table);
+    document.getElementById('original-pilot-btn').disabled=!data.valid;
+  }catch(e){if(serial===originalRequest)document.getElementById('original-report').textContent='Analisi non riuscita: '+e.message;}
+}
+async function runOriginalImport(all){
+  if(!originalState||originalBusy||!importFile)return;
+  var state=originalState;if(!confirm(all?'Importare le righe rimanenti in bozza, a blocchi?':'Importare le prime 10 righe in bozza?'))return;
+  originalBusy=true;originalStop=false;
+  var reverse=document.getElementById('import-create-reverse').checked;
+  var ids=['original-preview-btn','original-sheet','import-format','import-file-input','import-create-reverse','original-pilot-btn','original-all-btn'];ids.forEach(function(id){document.getElementById(id).disabled=true;});
+  var progress=document.getElementById('original-progress'),stop=document.getElementById('original-stop-btn');stop.style.display=all?'':'none';
+  var counts={created:0,skipped:0,duplicates:0,reverseCreated:0,reverseExisting:0},warnings=[];
+  try{
+    do{
+      var before=state.offset;progress.textContent='Elaborazione delle righe da '+(before+1)+' su '+state.total+'…';
+      var data=await requestOriginal({sheet:state.sheet,offset:before,limit:all?30:10,createReverse:reverse});
+      if(data.nextOffset<=before)throw new Error('Nessun avanzamento');state.offset=data.nextOffset;Object.keys(counts).forEach(function(k){counts[k]+=Number(data[k]||0);});warnings=warnings.concat(data.warnings||[]);
+      progress.textContent='Righe elaborate: '+state.offset+'/'+state.total+'\nVoci create: '+counts.created+' · Duplicati: '+counts.duplicates+' · Saltate: '+counts.skipped+'\nInverse create: '+counts.reverseCreated+' · Già presenti: '+counts.reverseExisting;
+    }while(all&&!originalStop&&state.offset<state.total);
+    if(warnings.length){var details=document.createElement('details'),sum=document.createElement('summary');sum.textContent='Segnalazioni del blocco ('+warnings.length+')';details.appendChild(sum);var pre=document.createElement('div');pre.style.whiteSpace='pre-wrap';pre.textContent=warnings.join('\n');details.appendChild(pre);progress.appendChild(details);}
+    if(state.offset===state.total)progress.appendChild(document.createTextNode('\nFoglio completato.'));
+    renderAdminPage();
+  }catch(e){progress.textContent+='\nImportazione interrotta: '+e.message+'\nUltima posizione confermata: '+state.offset+'. I blocchi precedenti restano salvati. Verifica prima di riprendere.';}
+  finally{originalBusy=false;ids.forEach(function(id){document.getElementById(id).disabled=false;});stop.style.display='none';document.getElementById('original-pilot-btn').disabled=state.offset!==0;document.getElementById('original-all-btn').disabled=state.offset===0||state.offset>=state.total;}
+}
+
 
 function downloadTemplate(){
   var rows=[
@@ -1654,11 +1728,11 @@ function handleImportFile(input){
   if(!importFile)return;
   if(importFile.size>10*1024*1024){importFile=null;input.value='';document.getElementById('import-preview').style.display='none';showToast('Il file supera 10 MB','error');return;}
   document.getElementById('import-file-name').textContent=importFile.name+' ('+Math.round(importFile.size/1024)+' KB)';
-  document.getElementById('import-preview-content').textContent='Il file sarà letto dal server. Controlla le colonne Termine, Traduzione, Direzione e Stato prima di procedere.';
+  resetOriginalImport();
 }
 
 async function startImport(){
-  if(!importFile)return;
+  if(!importFile||document.getElementById('import-format').value!=='standard')return;
   var btn=document.getElementById('import-btn');
   if(btn.disabled)return;
   var reverse=document.getElementById('import-create-reverse').checked;
