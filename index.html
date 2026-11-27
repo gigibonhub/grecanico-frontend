@@ -261,6 +261,29 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--ink
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--cream2); }
 ::-webkit-scrollbar-thumb { background: var(--cream3); border-radius: 6px; }
+
+/* SCHEDA VOCABOLO — presentazione editoriale */
+.scheda { max-width: 860px; padding-top: 28px; padding-bottom: 64px; }
+.scheda-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: clamp(22px, 5vw, 42px); box-shadow: var(--shadow); }
+.scheda-eyebrow { color: var(--gold); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 12px; }
+.scheda-word { font-size: clamp(36px, 7vw, 56px); text-transform: none; overflow-wrap: anywhere; }
+.scheda-phonetic { color: var(--ink3); font-size: 17px; margin-top: 7px; }
+.scheda-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 4px; }
+.scheda-meta span { background: var(--cream); border: 1px solid var(--cream3); color: var(--ink2); border-radius: 20px; padding: 4px 11px; font-size: 12px; }
+.scheda-section { padding-top: 23px; margin-top: 23px; border-top: 1px solid var(--cream3); }
+.scheda-section-title { color: var(--ink3); text-transform: uppercase; letter-spacing: .12em; font-weight: 600; font-size: 11px; margin-bottom: 12px; }
+.scheda-main-translation { font-family: var(--font-display); font-size: 29px; font-weight: 600; color: var(--ink2); line-height: 1.25; }
+.scheda-translation { margin: 7px 0; }
+.scheda-definition { line-height: 1.85; white-space: pre-line; }
+.scheda-example { background: var(--cream); border-left: 3px solid var(--gold); padding: 15px 18px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.scheda-example-gr { font-family: var(--font-display); font-size: 23px; font-weight: 600; }
+.scheda-example-it { color: var(--ink3); font-style: italic; margin-top: 4px; }
+.scheda-tags { display: flex; flex-wrap: wrap; gap: 7px; }
+.scheda-tags span { border: 1px solid var(--cream3); padding: 3px 10px; border-radius: 16px; font-size: 12px; color: var(--ink3); }
+.scheda-controls { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+.scheda-back { margin-bottom: 15px; }
+@media(max-width: 640px) { .scheda-panel { padding: 20px; } .scheda-actions { gap: 5px; } .scheda-action-btn { width: 34px; height: 34px; } }
+@media print { .topbar,.nav-tabs,.scheda-back,.scheda-actions,.scheda-controls { display:none!important; } .scheda-panel { box-shadow:none; border:0; } }
 </style>
 </head>
 <body>
@@ -873,97 +896,101 @@ function renderLemmaCards(list) {
 // ════════════════════════════════════════
 //  SCHEDA LEMMA
 // ════════════════════════════════════════
-async function openScheda(id) {
-  var l = LEMMAS.find(function(x){ return x.id===id; });
-  if(!l) {
-    try { var data = await apiFetch('/lemmas/'+id); l = normalizeAPILemma(data); } catch(e){ return; }
-  }
-  var saved = savedWords.includes(id);
-  var isAuth = currentUser && currentUser.role !== 'guest';
-  var html = '';
+function escapeScheda(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+  });
+}
 
-  // Header scheda
-  html += '<div class="scheda-header">';
-  html += '<div style="flex:1">';
-  html += '<div class="scheda-word">' + l.word + '</div>';
-  if(l.variants) html += '<div class="scheda-variants">' + l.variants + '</div>';
-  if(l.grammaticalCategory) {
-    var catLine = l.grammaticalCategory;
-    if(l.grammaticalExceptions) catLine += ', ' + l.grammaticalExceptions;
-    html += '<div class="scheda-cat">' + catLine + '</div>';
-  }
-  html += '</div>';
-  html += '<div class="scheda-actions">';
-  html += '<button class="scheda-action-btn" onclick="window.print()" title="Stampa">🖨</button>';
-  if(isAuth) html += '<button class="scheda-action-btn' + (saved?' saved':'') + '" id="save-scheda-btn-' + id + '" title="' + (saved?'Salvato':'Salva') + '">♥</button>';
+async function openScheda(id) {
+  var l = LEMMAS.find(function(x){ return String(x.id) === String(id); });
+  // Recupera la scheda completa quando disponibile (esempi, media, definizione).
+  try {
+    var detail = await apiFetch('/lemmas/' + encodeURIComponent(id));
+    var raw = detail && (detail.data && !Array.isArray(detail.data) ? detail.data : detail);
+    if(raw && raw.word) l = normalizeAPILemma(raw);
+  } catch(e) { /* La scheda può comunque essere mostrata dai risultati già caricati. */ }
+  if(!l) { showToast('Impossibile caricare il vocabolo', 'error'); return; }
+
+  var esc = escapeScheda;
+  var isAuth = currentUser && currentUser.role !== 'guest';
+  var saved = savedWords.some(function(x){return String(x) === String(id);});
+  var isGreek = l.direction !== 'IT_GR';
+  var html = '<button class="scheda-back" id="scheda-back-btn">← Torna al dizionario</button>';
+  html += '<article class="scheda-panel">';
+  html += '<div class="scheda-eyebrow">' + (isGreek ? 'Grecanico → Italiano' : 'Italiano → Grecanico') + '</div>';
+  html += '<div class="scheda-header"><div style="flex:1;min-width:0">';
+  html += '<h1 class="scheda-word">' + esc(l.word) + '</h1>';
+  if(l.phonetic) html += '<div class="scheda-phonetic">' + esc(l.phonetic) + '</div>';
+  if(l.variants) html += '<div class="scheda-variants">Varianti: ' + esc(l.variants) + '</div>';
+  html += '</div><div class="scheda-actions">';
+  html += '<button class="scheda-action-btn" id="scheda-print-btn" title="Stampa scheda" aria-label="Stampa scheda">⎙</button>';
+  if(isAuth) html += '<button class="scheda-action-btn' + (saved?' saved':'') + '" id="scheda-save-btn" title="' + (saved?'Rimuovi dai salvati':'Salva vocabolo') + '" aria-label="Salva vocabolo">♥</button>';
   html += '</div></div>';
 
-  // SCHEDA GR→IT
-  if(l.direction === 'GR_IT' || !l.direction) {
-    // Traduzioni
-    if(l.seeAlso) {
-      html += '<div class="scheda-spacer"></div>';
-      html += '<div class="scheda-see-also">vedi <a onclick="searchByWord(\'' + l.seeAlso + '\')">' + l.seeAlso + '</a></div>';
-    } else if(l.translations && l.translations.length) {
-      l.translations.forEach(function(t, i) {
-        html += '<div class="scheda-spacer"></div>';
-        html += '<div class="scheda-translation"><span class="scheda-translation-n">' + (i+1) + '.</span> ' + t.text + '</div>';
-      });
-    } else if(l.it) {
-      html += '<div class="scheda-spacer"></div>';
-      html += '<div class="scheda-translation">' + l.it + '</div>';
-    }
-  }
+  var meta = [];
+  if(l.grammaticalCategory) meta.push(l.grammaticalCategory);
+  else if(l.cat) meta.push(catLabel(l.cat));
+  if(l.grammaticalExceptions) meta.push(l.grammaticalExceptions);
+  if(l.area) meta.push('Località: ' + l.area);
+  if(meta.length) html += '<div class="scheda-meta">' + meta.map(function(x){return '<span>' + esc(x) + '</span>';}).join('') + '</div>';
 
-  // SCHEDA IT→GR
-  if(l.direction === 'IT_GR') {
-    // Traduzione principale con categoria
-    if(l.it) {
-      html += '<div class="scheda-spacer"></div>';
-      html += '<div class="scheda-translation">';
-      if(l.grammaticalCategory) html += '<span class="scheda-cat" style="display:inline">' + l.grammaticalCategory + '</span> ';
-      html += l.it + '</div>';
-    }
-    // Lemmi correlati numerati
-    if(l.translations && l.translations.length) {
-      l.translations.forEach(function(t, i) {
-        html += '<div class="scheda-spacer"></div>';
-        html += '<div class="scheda-translation"><span class="scheda-translation-n">' + (i+1) + '.</span> ' + t.text + '</div>';
-      });
-    }
-    // Lemmi correlati (colonne D-E, F-G, H-I)
-    if(l.relatedLemmas && l.relatedLemmas.length) {
-      l.relatedLemmas.forEach(function(r) {
-        html += '<div class="scheda-spacer"></div>';
-        html += '<div class="scheda-related"><span class="scheda-related-cat">' + r.category + ':</span> ' + r.term + '</div>';
-      });
-    }
+  var translations = Array.isArray(l.translations) ? l.translations : [];
+  var main = l.it || (translations[0] && translations[0].text) || '';
+  if(main || translations.length) {
+    html += '<section class="scheda-section"><h2 class="scheda-section-title">Traduzione</h2>';
+    if(main) html += '<div class="scheda-main-translation">' + esc(main) + '</div>';
+    var others = translations.filter(function(t){return t && t.text && String(t.text).trim() !== String(main).trim();});
+    others.forEach(function(t,i){ html += '<div class="scheda-translation"><span class="scheda-translation-n">' + (i+1) + '.</span> ' + esc(t.text) + '</div>'; });
+    html += '</section>';
   }
-
-  // Audio se presente
-  if(l.hasAudio) {
-    html += '<div class="scheda-spacer"></div>';
-    html += '<button class="btn-secondary" style="font-size:13px;padding:7px 16px" id="audio-scheda-btn-' + id + '">Ascolta pronuncia</button>';
+  if(l.def) html += '<section class="scheda-section"><h2 class="scheda-section-title">Definizione</h2><p class="scheda-definition">' + esc(l.def) + '</p></section>';
+  if(l.exGr || l.exIt) {
+    html += '<section class="scheda-section"><h2 class="scheda-section-title">Esempio d’uso</h2><div class="scheda-example">';
+    if(l.exGr) html += '<div class="scheda-example-gr">' + esc(l.exGr) + '</div>';
+    if(l.exIt) html += '<div class="scheda-example-it">' + esc(l.exIt) + '</div>';
+    html += '</div></section>';
   }
-
-  // Coniugazione se verbo
-  if(l.cat === 'verb') {
-    html += '<div class="scheda-spacer"></div>';
-    html += '<button class="btn-secondary" style="font-size:13px;padding:7px 16px" id="conj-scheda-btn-' + id + '">Coniugazione</button>';
+  if(l.seeAlso || (l.relatedLemmas && l.relatedLemmas.length)) {
+    html += '<section class="scheda-section"><h2 class="scheda-section-title">Rimandi e lemmi correlati</h2>';
+    if(l.seeAlso) html += '<div class="scheda-see-also">Vedi anche: <a href="#" id="scheda-see-also-link">' + esc(l.seeAlso) + '</a></div>';
+    (l.relatedLemmas || []).forEach(function(r){
+      html += '<div class="scheda-related"><span class="scheda-related-cat">' + esc(r.category) + ':</span> ' + esc(r.term) + '</div>';
+    });
+    html += '</section>';
   }
-
+  if(l.tags && l.tags.length) {
+    html += '<section class="scheda-section"><h2 class="scheda-section-title">Argomenti</h2><div class="scheda-tags">';
+    l.tags.forEach(function(t){ html += '<span>' + esc(typeof t === 'string' ? t : (t.name || t.label || '')) + '</span>'; });
+    html += '</div></section>';
+  }
+  if(l.hasAudio || l.cat === 'verb' || l.hasPhoto || l.hasVideo) {
+    html += '<div class="scheda-controls">';
+    if(l.hasAudio) html += '<button class="btn-secondary" id="scheda-audio-btn">▶ Ascolta pronuncia</button>';
+    if(l.cat === 'verb') html += '<button class="btn-secondary" id="scheda-conj-btn">Coniugazione</button>';
+    if(l.hasPhoto) html += '<span class="scheda-meta"><span>Foto disponibile</span></span>';
+    if(l.hasVideo) html += '<span class="scheda-meta"><span>Video disponibile</span></span>';
+    html += '</div>';
+  }
+  html += '</article>';
   document.getElementById('scheda-content').innerHTML = html;
   goPage('scheda');
-
-  // Collega eventi
-  var saveBtn = document.getElementById('save-scheda-btn-' + id);
-  if(saveBtn) saveBtn.addEventListener('click', function(){ toggleSave(id); });
-
-  var audioBtn = document.getElementById('audio-scheda-btn-' + id);
-  if(audioBtn) audioBtn.addEventListener('click', function(){ showToast('Audio in riproduzione...','info'); });
-
-  var conjBtn = document.getElementById('conj-scheda-btn-' + id);
-  if(conjBtn) conjBtn.addEventListener('click', function(){ openConjugationModal(id, l.word); });
+  document.getElementById('scheda-back-btn').addEventListener('click',function(){goPage('home');});
+  document.getElementById('scheda-print-btn').addEventListener('click',function(){window.print();});
+  var saveBtn = document.getElementById('scheda-save-btn');
+  if(saveBtn) saveBtn.addEventListener('click',function(){toggleSave(id);});
+  var seeAlsoBtn = document.getElementById('scheda-see-also-link');
+  if(seeAlsoBtn) seeAlsoBtn.addEventListener('click',function(e){e.preventDefault();searchByWord(l.seeAlso);});
+  var conjBtn = document.getElementById('scheda-conj-btn');
+  if(conjBtn) conjBtn.addEventListener('click',function(){openConjugationModal(id,l.word);});
+  var audioBtn = document.getElementById('scheda-audio-btn');
+  if(audioBtn) audioBtn.addEventListener('click',function(){
+    var media = l.media || {};
+    var url = media.audioUrl || media.audio_url || (media.audio && media.audio.url);
+    if(!url) { showToast('Registrazione audio non ancora collegata', 'info'); return; }
+    try { var audio = new Audio(url); audio.play().catch(function(){showToast('Impossibile riprodurre l’audio','error');}); }
+    catch(e) { showToast('Impossibile riprodurre l’audio','error'); }
+  });
 }
 
 function searchByWord(word) {
@@ -1023,7 +1050,7 @@ async function toggleSave(id) {
       showToast('Aggiunto ai salvati','success');
     }
     document.getElementById('saved-count-badge').textContent = savedWords.length;
-    var btn = document.getElementById('save-scheda-btn-'+id);
+    var btn = document.getElementById('scheda-save-btn');
     if(btn) { btn.classList.toggle('saved', savedWords.includes(id)); }
   } catch(err) { showToast('Errore nel salvataggio','error'); }
 }
