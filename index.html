@@ -284,6 +284,47 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--ink
 .scheda-back { margin-bottom: 15px; }
 @media(max-width: 640px) { .scheda-panel { padding: 20px; } .scheda-actions { gap: 5px; } .scheda-action-btn { width: 34px; height: 34px; } }
 @media print { .topbar,.nav-tabs,.scheda-back,.scheda-actions,.scheda-controls { display:none!important; } .scheda-panel { box-shadow:none; border:0; } }
+
+/* Grafica del dizionario: oro, crema e schede lessicali */
+.hero-subtitle { max-width: 560px; }
+.lemma-card { padding: 20px 22px; min-height: 150px; }
+.lemma-card-word { font-size: 24px; }
+.lemma-card-phonetic { font-size: 13px; font-style: italic; color: var(--ink3); margin-top: 3px; }
+.lemma-card-trans { color: #a63d1d; font-weight: 500; margin-top: 10px; }
+.lex-badges { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; align-items:center; }
+.lex-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:11px; line-height:1.4; font-weight:500; background:#f0e8d5; border:1px solid #e4d5b7; color:#624925; }
+.lex-badge.noun { background:#e4edf9; border-color:#b4ccef; color:#294e80; }
+.lex-badge.verb { background:#e8efdc; border-color:#c5d5a8; color:#455a27; }
+.lex-badge.adj { background:#f8e6d9; border-color:#e9bf9f; color:#884522; }
+.lex-badge.audio { background:#f0e6fc; border-color:#d6b8f5; color:#654199; }
+.lex-badge.photo { background:#e3f4e3; border-color:#b7dfb3; color:#2f6637; }
+.lex-badge.video { background:#fce8de; border-color:#f0c0a9; color:#944124; }
+.lex-badge[href],button.lex-badge { cursor:pointer; font-family:inherit; text-decoration:none; }
+.lex-badge[href]:hover,button.lex-badge:hover { filter:brightness(.95); }
+.alpha-btn:first-child { width:auto; min-width:36px; padding:0 7px; }
+#page-scheda.active { position:fixed; inset:0; z-index:180; background:rgba(26,18,8,.68); display:flex; align-items:center; justify-content:center; padding:18px; overflow:auto; overscroll-behavior:contain; }
+#page-scheda .scheda { width:min(100%,660px); max-height:calc(100dvh - 36px); padding:0; margin:auto; overflow:auto; border-radius:18px; box-shadow:var(--shadow-lg); background:white; }
+#page-scheda .scheda-panel { padding:24px 26px; border:0; box-shadow:none; border-radius:18px; }
+.scheda-header { margin-bottom:8px; align-items:flex-start; }
+.scheda-word { font-size:clamp(34px,6vw,43px); font-weight:600; }
+.scheda-phonetic { font-size:14px; font-style:italic; }
+.scheda-eyebrow { font-size:10px; margin-bottom:6px; }
+.scheda-section { border:0; padding-top:0; margin-top:20px; }
+.scheda-section-title { color:#986b1e; padding-bottom:6px; border-bottom:1px solid var(--cream3); margin-bottom:10px; }
+.scheda-main-translation { font-family:var(--font-body); font-size:16px; font-weight:500; }
+.scheda-definition { font-size:14px; line-height:1.7; }
+.scheda-example { background:var(--cream2); border-left:2px solid var(--gold); padding:10px 14px; }
+.scheda-example-gr { font-size:19px; font-weight:400; font-style:italic; }
+.scheda-example-it { font-size:13px; font-style:normal; }
+.scheda-tags span { background:var(--cream2); }
+.scheda-controls { margin-top:16px; }
+.scheda-controls .saved { color:var(--gold2); }
+.scheda-media-player { margin-top:10px; }
+.scheda-media-player audio,.scheda-media-player video { width:100%; max-height:300px; }
+.scheda-media-player img { max-width:100%; max-height:300px; object-fit:contain; border-radius:8px; }
+@media(max-width:640px) { #page-scheda.active { padding:10px; } #page-scheda .scheda { max-height:calc(100dvh - 20px); } #page-scheda .scheda-panel { padding:20px; } .hero-stats { gap:22px; } }
+@media print { body:has(#page-scheda.active) .page:not(#page-scheda) { display:none!important; } #page-scheda.active { position:static; background:white; display:block; padding:0; } #page-scheda .scheda { max-height:none; overflow:visible; box-shadow:none; } .scheda-close-btn { display:none; } }
+
 </style>
 </head>
 <body>
@@ -371,21 +412,22 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--ink
     <div class="hero">
       <div class="hero-eyebrow">Patrimonio Linguistico della Calabria</div>
       <h1 class="hero-title"><strong>Γκρεκάνικο</strong><br>Dizionario Grecanico</h1>
-      <p class="hero-subtitle" id="hero-subtitle">Cerca in Grecanico o in Italiano — usa lo switch GR/IT in alto</p>
+      <p class="hero-subtitle" id="hero-subtitle">Il dizionario digitale della lingua grecanica calabrese, con definizioni, esempi, audio e documenti multimediali.</p>
       <div class="hero-search">
         <input type="text" placeholder="Cerca un termine..." id="hero-search-input" onkeydown="if(event.key==='Enter')doHeroSearch()">
         <button class="hero-search-btn" onclick="doHeroSearch()">→</button>
       </div>
       <div class="hero-stats">
         <div class="hero-stat"><div class="hero-stat-n" id="stat-lemmi">—</div><div class="hero-stat-l">Lemmi</div></div>
-        <div class="hero-stat"><div class="hero-stat-n" id="stat-gr">—</div><div class="hero-stat-l">Greco → Italiano</div></div>
-        <div class="hero-stat"><div class="hero-stat-n" id="stat-it">—</div><div class="hero-stat-l">Italiano → Greco</div></div>
+        <div class="hero-stat"><div class="hero-stat-n" id="stat-audio">—</div><div class="hero-stat-l">Lemmi con audio</div></div>
+        <div class="hero-stat"><div class="hero-stat-n" id="stat-video">—</div><div class="hero-stat-l">Lemmi con video</div></div>
+        <div class="hero-stat"><div class="hero-stat-n" id="stat-areas">—</div><div class="hero-stat-l">Località</div></div>
       </div>
     </div>
     <div class="section">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
         <div>
-          <div class="section-title" id="dict-title">Dizionario Grecanico → Italiano</div>
+          <div class="section-title">Sfoglia l’alfabeto</div><div id="dict-title" style="font-size:12px;color:var(--ink3)">Dizionario Grecanico → Italiano</div>
           <div class="section-sub">Seleziona una lettera per navigare i termini</div>
         </div>
         <div class="filter-chips" id="cat-filters">
@@ -393,6 +435,7 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--ink
           <div class="filter-chip" onclick="filterCat('VERB',this)">Verbi</div>
           <div class="filter-chip" onclick="filterCat('NOUN',this)">Sostantivi</div>
           <div class="filter-chip" onclick="filterCat('ADJ',this)">Aggettivi</div>
+          <div class="filter-chip" onclick="filterCat('media',this)">Con media</div>
         </div>
       </div>
       <div class="alpha-nav" id="alpha-nav"></div>
@@ -401,7 +444,7 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--ink
   </div>
 
   <!-- PAGE: SCHEDA -->
-  <div class="page" id="page-scheda">
+  <div class="page" id="page-scheda" role="dialog" aria-modal="true" aria-label="Scheda vocabolo">
     <div class="scheda" id="scheda-content"></div>
   </div>
 
@@ -685,12 +728,12 @@ function setDirection(dir) {
   var topInput = document.getElementById('topbar-search-input');
   if(dir === 'GR_IT') {
     if(dictTitle) dictTitle.textContent = 'Dizionario Grecanico - Italiano';
-    if(heroSub) heroSub.textContent = 'Cerca in Grecanico - usa lo switch GR/IT in alto per cambiare direzione';
+    if(heroSub) heroSub.textContent = 'Il dizionario digitale della lingua grecanica calabrese, con definizioni, esempi, audio e documenti multimediali.';
     if(heroInput) heroInput.placeholder = 'Cerca in Grecanico...';
     if(topInput) topInput.placeholder = 'Cerca in Grecanico...';
   } else {
     if(dictTitle) dictTitle.textContent = 'Dizionario Italiano - Grecanico';
-    if(heroSub) heroSub.textContent = 'Cerca in Italiano - usa lo switch GR/IT in alto per cambiare direzione';
+    if(heroSub) heroSub.textContent = 'Il dizionario digitale della lingua grecanica calabrese, con definizioni, esempi, audio e documenti multimediali.';
     if(heroInput) heroInput.placeholder = 'Cerca in Italiano...';
     if(topInput) topInput.placeholder = 'Cerca in Italiano...';
   }
@@ -755,6 +798,7 @@ function applyAuth() {
     if(currentUser.role !== 'guest') { document.getElementById('user-btn').style.display=''; document.getElementById('nav-user').style.display=''; }
     if(currentUser.role === 'admin' || currentUser.role === 'editor') { document.getElementById('admin-btn').style.display=''; document.getElementById('nav-admin').style.display=''; }
     renderAll();
+    var linkedId=new URLSearchParams(location.search).get('lemma');if(linkedId&&/^\d+$/.test(linkedId))openScheda(Number(linkedId));
     if(currentUser.role !== 'guest') loadSavedWords();
     showToast('Benvenuto, ' + currentUser.name + '!', 'success');
   } catch(err) { alert('Errore: ' + err.message); }
@@ -777,6 +821,7 @@ function doLogout() {
 //  NAVIGATION
 // ════════════════════════════════════════
 function goPage(p) {
+  if(p!=='scheda'&&document.getElementById('page-scheda').classList.contains('active'))closeScheda();
   document.querySelectorAll('.page').forEach(function(el){ el.classList.remove('active'); });
   document.getElementById('page-'+p).classList.add('active');
   document.querySelectorAll('.nav-tab').forEach(function(el){ el.classList.toggle('active', el.dataset.page===p); });
@@ -794,7 +839,7 @@ async function renderAll() {
   try {
     var url = '/lemmas?limit=50';
     if(currentFilter.letter) url += '&letter=' + currentFilter.letter;
-    if(currentFilter.cat && currentFilter.cat !== 'all') url += '&category=' + currentFilter.cat;
+    if(currentFilter.cat && currentFilter.cat !== 'all' && currentFilter.cat !== 'media') url += '&category=' + currentFilter.cat;
     var data = await apiFetch(url);
     LEMMAS = (data.data || []).map(normalizeAPILemma).filter(function(l){ return l.direction === currentDirection; });
     renderAlphabetNav();
@@ -811,14 +856,14 @@ function showLoading() {
 
 async function loadStats() {
   try {
-    // Il backend attuale non applica il parametro direction: contiamo i record per direzione sul client.
     var data = await apiFetch('/lemmas?limit=50');
     var all = (data.data || []).map(normalizeAPILemma);
-    var gr = all.filter(function(l){ return l.direction === 'GR_IT'; }).length;
-    var it = all.filter(function(l){ return l.direction === 'IT_GR'; }).length;
-    document.getElementById('stat-lemmi').textContent = data.meta && data.meta.total != null ? data.meta.total : all.length;
-    document.getElementById('stat-gr').textContent = gr;
-    document.getElementById('stat-it').textContent = it;
+    var total = data.meta && data.meta.total != null ? data.meta.total : all.length;
+    document.getElementById('stat-lemmi').textContent = total.toLocaleString('it-IT');
+    var complete = total === all.length;
+    document.getElementById('stat-audio').textContent = complete ? all.filter(function(l){return l.hasAudio;}).length : '—';
+    document.getElementById('stat-video').textContent = complete ? all.filter(function(l){return l.hasVideo;}).length : '—';
+    document.getElementById('stat-areas').textContent = complete ? new Set(all.map(function(l){return String(l.area||'').trim().toLocaleLowerCase('it-IT');}).filter(Boolean)).size : '—';
   } catch(e) {}
 }
 
@@ -841,6 +886,7 @@ function normalizeAPILemma(l) {
     def: l.definition||'',
     translations: l.translations||[],
     relatedLemmas: l.relatedLemmas||[],
+    examples: Array.isArray(l.examples) ? l.examples : [],
     exGr: ex ? ex.textGr : '',
     exIt: ex ? ex.textIt : '',
     tags: l.tags||[],
@@ -877,29 +923,30 @@ function filterCat(cat, btn) {
 
 function renderLemmaGrid() {
   var filtered = LEMMAS;
+  if(currentFilter.cat === 'media') filtered = filtered.filter(function(l){return l.hasAudio || l.hasPhoto || l.hasVideo;});
   if(currentFilter.letter) filtered = filtered.filter(function(l){ return l.word[0].toUpperCase() === currentFilter.letter; });
   var grid = document.getElementById('lemma-grid');
   if(!filtered.length) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">-</div><div class="empty-title">Nessun termine trovato</div></div>'; return; }
   grid.innerHTML = renderLemmaCards(filtered);
 }
 
+function mediaBadges(l) {
+  return (l.hasAudio?'<span class="lex-badge audio">♫ Audio</span>':'') + (l.hasPhoto?'<span class="lex-badge photo">▣ Foto</span>':'') + (l.hasVideo?'<span class="lex-badge video">▶ Video</span>':'');
+}
 function renderLemmaCards(list) {
   return list.map(function(l) {
-    var dirLabel = l.direction === 'GR_IT' ? 'GR - IT' : 'IT - GR';
-    var dirClass = l.direction === 'GR_IT' ? 'gr-it' : 'it-gr';
-    var preview = '';
-    if(l.translations && l.translations.length) {
-      preview = l.translations[0].text;
-    } else {
-      preview = l.it || '';
-    }
-    return '<div class="lemma-card fade-in" onclick="openScheda(' + l.id + ')">' +
-      '<div class="lemma-card-word">' + l.word + '</div>' +
-      (l.variants ? '<div class="lemma-card-variants">' + l.variants + '</div>' : '') +
-      (l.grammaticalCategory ? '<div class="lemma-card-cat">' + l.grammaticalCategory + (l.grammaticalExceptions ? ', ' + l.grammaticalExceptions : '') + '</div>' : '') +
-      '<div class="lemma-card-trans">' + preview + '</div>' +
-      '<span class="direction-badge ' + dirClass + '">' + dirLabel + '</span>' +
-      '</div>';
+    var esc = escapeScheda;
+    var id = Number(l.id);
+    if(!Number.isSafeInteger(id)) return '';
+    var preview = l.translations && l.translations.length ? l.translations[0].text : l.it;
+    var cat = ['noun','verb','adj','adv','expr'].includes(l.cat) ? l.cat : '';
+    return '<div class="lemma-card fade-in" role="button" tabindex="0" onclick="openScheda('+id+')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openScheda('+id+')}" aria-label="Apri '+esc(l.word)+'">' +
+      '<div class="lemma-card-word">'+esc(l.word)+'</div>' +
+      (l.phonetic?'<div class="lemma-card-phonetic">'+esc(l.phonetic)+'</div>':'') +
+      (l.variants?'<div class="lemma-card-variants">'+esc(l.variants)+'</div>':'') +
+      '<div class="lex-badges"><span class="lex-badge '+cat+'">'+esc(l.grammaticalCategory||catLabel(l.cat))+'</span></div>' +
+      '<div class="lemma-card-trans">'+esc(preview||'')+'</div>' +
+      (l.hasAudio||l.hasPhoto||l.hasVideo?'<div class="lex-badges">'+mediaBadges(l)+'</div>':'') + '</div>';
   }).join('');
 }
 
@@ -912,95 +959,73 @@ function escapeScheda(value) {
   });
 }
 
+function mediaEntries(l,kind) {
+  var m=l.media||{};
+  var items=Array.isArray(m)?m.filter(function(x){return x&&String(x.type).toLowerCase()===kind;}):m[kind];
+  if(!Array.isArray(items)) items=items?[items]:[];
+  if(!items.length && (m[kind+'Url']||m[kind+'_url'])) items=[{url:m[kind+'Url']||m[kind+'_url']}];
+  return items.map(function(x){return typeof x==='string'?{url:x}:x;}).filter(function(x){return x&&x.url;});
+}
+function safeMediaUrl(url) {
+  try { var u=new URL(url,API+'/'); return ['http:','https:'].includes(u.protocol)?u.href:''; } catch(e){return '';}
+}
+function closeScheda() {
+  var page=document.getElementById('page-scheda');
+  page.classList.remove('active');
+  document.getElementById('scheda-content').innerHTML='';
+  document.body.style.overflow='';
+  if(schedaFocus && schedaFocus.isConnected) schedaFocus.focus({preventScroll:true});
+}
+var schedaFocus;
 async function openScheda(id) {
-  var l = LEMMAS.find(function(x){ return String(x.id) === String(id); });
-  // Recupera la scheda completa quando disponibile (esempi, media, definizione).
-  try {
-    var detail = await apiFetch('/lemmas/' + encodeURIComponent(id));
-    var raw = detail && (detail.data && !Array.isArray(detail.data) ? detail.data : detail);
-    if(raw && raw.word) l = normalizeAPILemma(raw);
-  } catch(e) { /* La scheda può comunque essere mostrata dai risultati già caricati. */ }
-  if(!l) { showToast('Impossibile caricare il vocabolo', 'error'); return; }
-
-  var esc = escapeScheda;
-  var isAuth = currentUser && currentUser.role !== 'guest';
-  var saved = savedWords.some(function(x){return String(x) === String(id);});
-  var isGreek = l.direction !== 'IT_GR';
-  var html = '<button class="scheda-back" id="scheda-back-btn">← Torna al dizionario</button>';
-  html += '<article class="scheda-panel">';
-  html += '<div class="scheda-eyebrow">' + (isGreek ? 'Grecanico → Italiano' : 'Italiano → Grecanico') + '</div>';
-  html += '<div class="scheda-header"><div style="flex:1;min-width:0">';
-  html += '<h1 class="scheda-word">' + esc(l.word) + '</h1>';
-  if(l.phonetic) html += '<div class="scheda-phonetic">' + esc(l.phonetic) + '</div>';
-  if(l.variants) html += '<div class="scheda-variants">Varianti: ' + esc(l.variants) + '</div>';
-  html += '</div><div class="scheda-actions">';
-  html += '<button class="scheda-action-btn" id="scheda-print-btn" title="Stampa scheda" aria-label="Stampa scheda">⎙</button>';
-  if(isAuth) html += '<button class="scheda-action-btn' + (saved?' saved':'') + '" id="scheda-save-btn" title="' + (saved?'Rimuovi dai salvati':'Salva vocabolo') + '" aria-label="Salva vocabolo">♥</button>';
-  html += '</div></div>';
-
-  var meta = [];
-  if(l.grammaticalCategory) meta.push(l.grammaticalCategory);
-  else if(l.cat) meta.push(catLabel(l.cat));
-  if(l.grammaticalExceptions) meta.push(l.grammaticalExceptions);
-  if(l.area) meta.push('Località: ' + l.area);
-  if(meta.length) html += '<div class="scheda-meta">' + meta.map(function(x){return '<span>' + esc(x) + '</span>';}).join('') + '</div>';
-
-  var translations = Array.isArray(l.translations) ? l.translations : [];
-  var main = l.it || (translations[0] && translations[0].text) || '';
-  if(main || translations.length) {
-    html += '<section class="scheda-section"><h2 class="scheda-section-title">Traduzione</h2>';
-    if(main) html += '<div class="scheda-main-translation">' + esc(main) + '</div>';
-    var others = translations.filter(function(t){return t && t.text && String(t.text).trim() !== String(main).trim();});
-    others.forEach(function(t,i){ html += '<div class="scheda-translation"><span class="scheda-translation-n">' + (i+1) + '.</span> ' + esc(t.text) + '</div>'; });
-    html += '</section>';
+  var l = LEMMAS.find(function(x){return String(x.id)===String(id);});
+  try { var detail=await apiFetch('/lemmas/'+encodeURIComponent(id)); var raw=detail&&(detail.data&&!Array.isArray(detail.data)?detail.data:detail); if(raw&&raw.word)l=normalizeAPILemma(raw); } catch(e) {}
+  if(!l){showToast('Impossibile caricare il vocabolo','error');return;}
+  var esc=escapeScheda, isGreek=l.direction!=='IT_GR', isAuth=currentUser&&currentUser.role!=='guest';
+  var saved=savedWords.some(function(x){return String(x)===String(id);});
+  var cat=['noun','verb','adj','adv','expr'].includes(l.cat)?l.cat:'';
+  var meta=[l.phonetic,l.grammaticalCategory||catLabel(l.cat),l.grammaticalExceptions,l.area].filter(Boolean);
+  var html='<article class="scheda-panel"><div class="scheda-eyebrow">'+(isGreek?'Grecanico → Italiano':'Italiano → Grecanico')+'</div>';
+  html+='<div class="scheda-header"><h1 class="scheda-word">'+esc(l.word)+'</h1><div class="scheda-actions"><span class="lex-badge '+cat+'">'+esc(catLabel(l.cat))+'</span><button class="scheda-action-btn scheda-close-btn" id="scheda-close-btn" aria-label="Chiudi scheda">×</button></div></div>';
+  if(meta.length)html+='<div class="scheda-phonetic">'+esc(meta.join(' · '))+'</div>';
+  if(l.variants)html+='<div class="lemma-card-variants">Varianti: '+esc(l.variants)+'</div>';
+  if(l.hasAudio||mediaEntries(l,'audio').length)html+='<div class="scheda-controls" style="margin-top:10px"><button class="btn-primary" id="scheda-audio-btn">▶ Ascolta pronuncia</button></div>';
+  var translations=Array.isArray(l.translations)?l.translations:[];
+  var main=l.it||(translations[0]&&translations[0].text)||'';
+  if(main||translations.length){html+='<section class="scheda-section"><h2 class="scheda-section-title">'+(isGreek?'Traduzione italiana':'Traduzione grecanica')+'</h2><div class="scheda-main-translation">'+esc(main)+'</div>'; translations.filter(function(t){return t&&t.text&&String(t.text).trim()!==String(main).trim();}).forEach(function(t,i){html+='<div class="scheda-translation">'+(i+1)+'. '+esc(t.text)+'</div>';});html+='</section>';}
+  if(l.def)html+='<section class="scheda-section"><h2 class="scheda-section-title">Definizione</h2><p class="scheda-definition">'+esc(l.def)+'</p></section>';
+  var examples=l.examples.length?l.examples:(l.exGr||l.exIt?[{textGr:l.exGr,textIt:l.exIt}]:[]);
+  if(examples.length){html+='<section class="scheda-section"><h2 class="scheda-section-title">Esempi d’uso</h2>';examples.forEach(function(e){html+='<div class="scheda-example" style="margin-bottom:6px">'+(e.textGr?'<div class="scheda-example-gr">'+esc(e.textGr)+'</div>':'')+(e.textIt?'<div class="scheda-example-it">'+esc(e.textIt)+'</div>':'')+'</div>';});html+='</section>';}
+  if(l.seeAlso||(l.relatedLemmas&&l.relatedLemmas.length)){html+='<section class="scheda-section"><h2 class="scheda-section-title">Rimandi e lemmi correlati</h2>';if(l.seeAlso)html+='<div class="scheda-see-also">Vedi anche: <a href="#" id="scheda-see-also-link">'+esc(l.seeAlso)+'</a></div>';(l.relatedLemmas||[]).forEach(function(r){html+='<div class="scheda-related"><span class="scheda-related-cat">'+esc(r.category)+':</span> '+esc(r.term)+'</div>';});html+='</section>';}
+  if(l.tags&&l.tags.length){html+='<section class="scheda-section"><h2 class="scheda-section-title">Tag tematici</h2><div class="scheda-tags">';l.tags.forEach(function(t){html+='<span>'+esc(typeof t==='string'?t:t.name||t.label||(t.tag&&t.tag.name)||'')+'</span>';});html+='</div></section>';}
+  if(l.hasAudio||l.hasPhoto||l.hasVideo||['audio','photo','video'].some(function(k){return mediaEntries(l,k).length;})){
+    html+='<section class="scheda-section"><h2 class="scheda-section-title">Media associati</h2><div class="lex-badges">';
+    [['audio','Audio','♫'],['photo','Foto','▣'],['video','Video','▶']].forEach(function(m){if(l['has'+m[0][0].toUpperCase()+m[0].slice(1)]||mediaEntries(l,m[0]).length)html+='<button class="lex-badge '+m[0]+'" id="media-'+m[0]+'">'+m[2]+' '+m[1]+'</button>';});
+    html+='</div><div class="scheda-media-player" id="scheda-media-player"></div></section>';
   }
-  if(l.def) html += '<section class="scheda-section"><h2 class="scheda-section-title">Definizione</h2><p class="scheda-definition">' + esc(l.def) + '</p></section>';
-  if(l.exGr || l.exIt) {
-    html += '<section class="scheda-section"><h2 class="scheda-section-title">Esempio d’uso</h2><div class="scheda-example">';
-    if(l.exGr) html += '<div class="scheda-example-gr">' + esc(l.exGr) + '</div>';
-    if(l.exIt) html += '<div class="scheda-example-it">' + esc(l.exIt) + '</div>';
-    html += '</div></section>';
+  html+='<div class="scheda-controls">';
+  if(isAuth)html+='<button class="btn-primary'+(saved?' saved':'')+'" id="scheda-save-btn" aria-pressed="'+saved+'">♥ '+(saved?'Salvato':'Salva')+'</button>';
+  html+='<button class="btn-secondary" id="scheda-share-btn">↗ Condividi</button><button class="btn-secondary" id="scheda-print-btn">Stampa</button>';
+  if(l.cat==='verb')html+='<button class="btn-secondary" id="scheda-conj-btn">Coniugazione</button>';
+  html+='</div></article>';
+  var page=document.getElementById('page-scheda');
+  if(!page.classList.contains('active'))schedaFocus=document.activeElement;
+  document.getElementById('scheda-content').innerHTML=html;page.classList.add('active');document.body.style.overflow='hidden';
+  var bind=function(id,fn){var el=document.getElementById(id);if(el)el.addEventListener('click',fn);};
+  bind('scheda-close-btn',closeScheda); document.getElementById('scheda-close-btn').focus();
+  bind('scheda-print-btn',function(){window.print();});
+  bind('scheda-save-btn',function(){toggleSave(Number(id));});
+  bind('scheda-share-btn',function(){shareWord(l.word,id);});
+  bind('scheda-see-also-link',function(e){e.preventDefault();closeScheda();searchByWord(l.seeAlso);});
+  bind('scheda-conj-btn',function(){openConjugationModal(id,l.word);});
+  function displayMedia(kind,play){
+    var player=document.getElementById('scheda-media-player');if(!player)return;player.replaceChildren();
+    var entries=mediaEntries(l,kind).filter(function(m){return safeMediaUrl(m.url);});
+    if(!entries.length){showToast('File multimediale non ancora collegato','info');return;}
+    entries.forEach(function(m,i){var el=document.createElement(kind==='photo'?'img':kind);el.src=safeMediaUrl(m.url);if(kind==='photo'){el.alt=m.caption||'Foto del vocabolo';el.loading='lazy';}else{el.controls=true;el.preload='metadata';}player.appendChild(el);if(m.caption){var caption=document.createElement('p');caption.textContent=m.caption;player.appendChild(caption);}if(play&&i===0&&kind==='audio')el.play().catch(function(){showToast('Premi Play per ascoltare','info');});});
   }
-  if(l.seeAlso || (l.relatedLemmas && l.relatedLemmas.length)) {
-    html += '<section class="scheda-section"><h2 class="scheda-section-title">Rimandi e lemmi correlati</h2>';
-    if(l.seeAlso) html += '<div class="scheda-see-also">Vedi anche: <a href="#" id="scheda-see-also-link">' + esc(l.seeAlso) + '</a></div>';
-    (l.relatedLemmas || []).forEach(function(r){
-      html += '<div class="scheda-related"><span class="scheda-related-cat">' + esc(r.category) + ':</span> ' + esc(r.term) + '</div>';
-    });
-    html += '</section>';
-  }
-  if(l.tags && l.tags.length) {
-    html += '<section class="scheda-section"><h2 class="scheda-section-title">Argomenti</h2><div class="scheda-tags">';
-    l.tags.forEach(function(t){ html += '<span>' + esc(typeof t === 'string' ? t : (t.name || t.label || '')) + '</span>'; });
-    html += '</div></section>';
-  }
-  if(l.hasAudio || l.cat === 'verb' || l.hasPhoto || l.hasVideo) {
-    html += '<div class="scheda-controls">';
-    if(l.hasAudio) html += '<button class="btn-secondary" id="scheda-audio-btn">▶ Ascolta pronuncia</button>';
-    if(l.cat === 'verb') html += '<button class="btn-secondary" id="scheda-conj-btn">Coniugazione</button>';
-    if(l.hasPhoto) html += '<span class="scheda-meta"><span>Foto disponibile</span></span>';
-    if(l.hasVideo) html += '<span class="scheda-meta"><span>Video disponibile</span></span>';
-    html += '</div>';
-  }
-  html += '</article>';
-  document.getElementById('scheda-content').innerHTML = html;
-  goPage('scheda');
-  document.getElementById('scheda-back-btn').addEventListener('click',function(){goPage('home');});
-  document.getElementById('scheda-print-btn').addEventListener('click',function(){window.print();});
-  var saveBtn = document.getElementById('scheda-save-btn');
-  if(saveBtn) saveBtn.addEventListener('click',function(){toggleSave(id);});
-  var seeAlsoBtn = document.getElementById('scheda-see-also-link');
-  if(seeAlsoBtn) seeAlsoBtn.addEventListener('click',function(e){e.preventDefault();searchByWord(l.seeAlso);});
-  var conjBtn = document.getElementById('scheda-conj-btn');
-  if(conjBtn) conjBtn.addEventListener('click',function(){openConjugationModal(id,l.word);});
-  var audioBtn = document.getElementById('scheda-audio-btn');
-  if(audioBtn) audioBtn.addEventListener('click',function(){
-    var media = l.media || {};
-    var url = media.audioUrl || media.audio_url || (media.audio && media.audio.url);
-    if(!url) { showToast('Registrazione audio non ancora collegata', 'info'); return; }
-    try { var audio = new Audio(url); audio.play().catch(function(){showToast('Impossibile riprodurre l’audio','error');}); }
-    catch(e) { showToast('Impossibile riprodurre l’audio','error'); }
-  });
+  bind('scheda-audio-btn',function(){displayMedia('audio',true);});
+  ['audio','photo','video'].forEach(function(k){bind('media-'+k,function(){displayMedia(k,false);});});
 }
 
 function searchByWord(word) {
@@ -1061,13 +1086,13 @@ async function toggleSave(id) {
     }
     document.getElementById('saved-count-badge').textContent = savedWords.length;
     var btn = document.getElementById('scheda-save-btn');
-    if(btn) { btn.classList.toggle('saved', savedWords.includes(id)); }
+    if(btn) { var active=savedWords.includes(id);btn.classList.toggle('saved',active);btn.textContent=active?'♥ Salvato':'♥ Salva';btn.setAttribute('aria-pressed',String(active)); }
   } catch(err) { showToast('Errore nel salvataggio','error'); }
 }
 
-function shareWord(word) {
-  if(navigator.share) navigator.share({title:'Grecanico - '+word, url:location.href});
-  else showToast('Link copiato','success');
+async function shareWord(word,id) {
+  var url=new URL(location.href);url.searchParams.set('lemma',id);
+  try { if(navigator.share){await navigator.share({title:'Grecanico - '+word,url:url.href});}else if(navigator.clipboard){await navigator.clipboard.writeText(url.href);showToast('Link copiato','success');}else{window.prompt('Copia il collegamento al vocabolo',url.href);} } catch(e){if(e.name!=='AbortError')window.prompt('Copia il collegamento al vocabolo',url.href);}
 }
 
 // ════════════════════════════════════════
@@ -1565,13 +1590,14 @@ function showToast(msg,type){
   var container=document.getElementById('toast-container');
   var toast=document.createElement('div');
   toast.className='toast '+type;
-  toast.innerHTML='<span>'+icons[type]+'</span><span>'+msg+'</span>';
+  toast.innerHTML='<span>'+icons[type]+'</span><span>'+escapeScheda(msg)+'</span>';
   container.appendChild(toast);
   requestAnimationFrame(function(){requestAnimationFrame(function(){toast.classList.add('show');});});
   setTimeout(function(){toast.classList.remove('show');setTimeout(function(){toast.remove();},400);},3500);
 }
 
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+document.getElementById('page-scheda').addEventListener('click',function(e){if(e.target===this)closeScheda();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document.getElementById('modal-overlay').classList.contains('open'))closeModal();else closeScheda();}});
 </script>
 </body>
 </html>
