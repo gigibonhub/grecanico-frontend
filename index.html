@@ -785,11 +785,11 @@ function goPage(p) {
 async function renderAll() {
   showLoading();
   try {
-    var url = '/lemmas?limit=200&direction=' + currentDirection;
+    var url = '/lemmas?limit=50';
     if(currentFilter.letter) url += '&letter=' + currentFilter.letter;
     if(currentFilter.cat && currentFilter.cat !== 'all') url += '&category=' + currentFilter.cat;
     var data = await apiFetch(url);
-    LEMMAS = (data.data || []).map(normalizeAPILemma);
+    LEMMAS = (data.data || []).map(normalizeAPILemma).filter(function(l){ return l.direction === currentDirection; });
     renderAlphabetNav();
     renderLemmaGrid();
     loadStats();
@@ -804,11 +804,14 @@ function showLoading() {
 
 async function loadStats() {
   try {
-    var grData = await apiFetch('/lemmas?limit=1&direction=GR_IT');
-    var itData = await apiFetch('/lemmas?limit=1&direction=IT_GR');
-    document.getElementById('stat-lemmi').textContent = (grData.meta.total + itData.meta.total) || 0;
-    document.getElementById('stat-gr').textContent = grData.meta.total || 0;
-    document.getElementById('stat-it').textContent = itData.meta.total || 0;
+    // Il backend attuale non applica il parametro direction: contiamo i record per direzione sul client.
+    var data = await apiFetch('/lemmas?limit=50');
+    var all = (data.data || []).map(normalizeAPILemma);
+    var gr = all.filter(function(l){ return l.direction === 'GR_IT'; }).length;
+    var it = all.filter(function(l){ return l.direction === 'IT_GR'; }).length;
+    document.getElementById('stat-lemmi').textContent = data.meta && data.meta.total != null ? data.meta.total : all.length;
+    document.getElementById('stat-gr').textContent = gr;
+    document.getElementById('stat-it').textContent = it;
   } catch(e) {}
 }
 
@@ -1025,7 +1028,7 @@ async function doAdvSearch(forceQ) {
     var url = '/search?q=' + encodeURIComponent(q) + '&direction=' + currentDirection;
     if(cat) url += '&category=' + cat;
     var data = await apiFetch(url);
-    var results = (data.data || []).map(normalizeAPILemma);
+    var results = (data.data || []).map(normalizeAPILemma).filter(function(l){ return l.direction === currentDirection; });
     document.getElementById('search-count-label').textContent = results.length + ' termini trovati';
     document.getElementById('search-results-grid').innerHTML = results.length
       ? renderLemmaCards(results)
